@@ -1,0 +1,278 @@
+%YAML:1.0
+
+#common parameters
+#support: 1 imu 1 cam; 1 imu 2 cam: 2 cam; 
+imu: 1         
+num_of_cam: 2
+
+
+# imu_topic: "/mavros/imu/data"
+imu_topic: "/imu"
+image0_topic: "/camera/infra1/image_rect_raw"
+image1_topic: "/camera/infra2/image_rect_raw/compressed"
+
+# imu_topic: "/camera/imu"
+# image0_topic: "/image1"
+# image1_topic: "/image2"
+
+
+output_path: "/home/raeditio/Documents/ELEC491_TL101/icon_drone/vins_output"
+
+
+cam0_calib: "left.yaml"
+cam1_calib: "right.yaml"
+image_width: 640
+image_height: 480
+   
+
+# Extrinsic parameter between IMU and Camera.
+estimate_extrinsic: 0   # 0  Have an accurate extrinsic parameters. We will trust the following imu^R_cam, imu^T_cam, don't change it.
+                        # 1  Have an initial guess about extrinsic parameters. We will optimize around your initial guess.
+
+
+body_T_cam0: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [ -3.9130449968061587e-02, 3.1756232752251257e-02,
+       9.9872936752990404e-01, 3.0833379978483677e-02,
+       -9.9921914166614922e-01, -6.7144403970738065e-03,
+       -3.8936142825379993e-02, 1.8318472016460256e-02,
+       5.4694435970488731e-03, -9.9947309016878449e-01,
+       3.1994174707275946e-02, 1.0335778753321290e-03, 0., 0., 0., 1. ]
+body_T_cam1: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: d
+   data: [ -3.6528704734868578e-02, 3.1779275272274754e-02,
+       9.9882717794099007e-01, 2.9059205139675512e-02,
+       -9.9931608035360497e-01, -6.9093036195644331e-03,
+       -3.6326754193026722e-02, -3.1447701909926858e-02,
+       5.7467623146181812e-03, -9.9947102968853585e-01,
+       3.2009928713410130e-02, 1.0434190916309539e-03, 0., 0., 0., 1. ]
+
+# body_T_cam0: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: d
+#    data: [ 9.5043631418540997e-03, 1.4650986600377558e-02,
+#        9.9984749620774815e-01, 3.7190273223576834e-02,
+#        -9.9992283746516597e-01, -7.8593897689620551e-03,
+#        9.6202446990932278e-03, 1.8318472016460256e-02,
+#        7.9991372583963494e-03, -9.9986177973962720e-01,
+#        1.4575157598676114e-02, 3.6458654945681502e-03, 0., 0., 0., 1. ]
+# body_T_cam1: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: d
+#    data: [ 1.2110346788749560e-02, 1.4831239549771891e-02,
+#        9.9981667011211306e-01, 3.7801019418211956e-02,
+#        -9.9989182338226046e-01, -8.1675921233728133e-03,
+#        1.2232414814957571e-02, -3.1447701909926858e-02,
+#        8.3475166340171159e-03, -9.9985665211185348e-01,
+#        1.4730722783397265e-02, 3.9351793668492962e-03, 0., 0., 0., 1. ]
+
+# body_T_cam0: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: d
+#    data: [ 4.3392049251005371e-03, -6.9147366833305690e-02,
+#        9.9759701932225053e-01, 4.0410378577392943e-02,
+#        -9.9956921429122103e-01, -2.9257550155697754e-02,
+#        2.3198276052829314e-03, 1.4951093016478640e-02,
+#        2.9026834857582673e-02, -9.9717733499057604e-01,
+#        -6.9244533641606321e-02, 2.102993126345094e-03, 0., 0., 0., 1. ]
+# body_T_cam1: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: d
+#    data: [ 6.9451434623524211e-03, -6.8990925536806136e-02,
+#        9.9759311203308854e-01, 4.0438766180800619e-02,
+#        -9.9955168990639165e-01, -2.9533866285307742e-02,
+#        4.9162940838053948e-03, -3.4728030063749984e-02,
+#        2.9123601898876250e-02, -9.9718002533936501e-01,
+#        -6.9165113146870016e-02, 2.0802067355370061e-03, 0., 0., 0., 1. ]
+
+# body_T_cam0: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: d
+#    data: [ -2.8532347786396350e-03, -5.1092206601599521e-03,
+#        9.9998287731117852e-01, 4.0e-02,
+#        -9.9992876287191712e-01, 1.1604478513279837e-02,
+#        -2.7937895182064687e-03, 2.0e-02,
+#        -1.1590005726278774e-02, -9.9991961274028451e-01,
+#        -5.1419669956354053e-03, 0.005, 0., 0., 0., 1. ]
+# body_T_cam1: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: d
+#    data: [ -4.6037992274094997e-04, -5.5495155562984566e-03,
+#        9.9998449534351141e-01, 4.0e-02,
+#        -9.9993525481095824e-01, 1.1372263714050312e-02,
+#        -3.9724572012272974e-04, -3.034482942397761e-02,
+#        -1.1369882869704528e-02, -9.9991993404227553e-01,
+#        -5.5543918137548332e-03, 0.005, 0., 0., 0., 1. ]
+
+
+# body_T_cam0: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: d
+#    data: [0, 0, 1, 0.08,
+#           -1, 0, 0, 0.015,
+#           0, -1, 0, -0.02,
+#           0, 0, 0, 1]
+# body_T_cam1: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: d
+#    data: [0, 0, 1, 0.08,
+#           -1, 0, 0, -0.035,
+#           0, -1, 0, -0.02,
+#           0, 0, 0, 1]
+
+# body_T_cam0: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: d
+#    data: [1, 0, 0, 0.0,
+#           0, 1, 0, 0.0,
+#           0, 0, 1, 0.0,
+#           0, 0, 0, 1]
+# body_T_cam1: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: d
+#    data: [1, 0, 0, -0.05,
+#           0, 1, 0, 0.0,
+#           0, 0, 1, 0.0,
+#           0, 0, 0, 1]
+
+
+# body_T_cam0: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: d
+#    data: [ -2.8133848123633509e-02, 2.7218894286007433e-03,
+#        9.9960045913739703e-01, 6.5050020309762951e-02,
+#        -9.9930630328659387e-01, -2.4486951836953930e-02,
+#        -2.8058891664089924e-02, 4.2138132897132375e-02,
+#        2.4400795098495631e-02, -9.9969644418076908e-01,
+#        3.4089134468411331e-03, 4.6055082361811179e-02, 0., 0., 0., 1. ]
+# body_T_cam1: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: d
+#    data: [ -2.5775255605032577e-02, 2.2017449897021035e-03,
+#        9.9966533825950732e-01, 6.5199591470858394e-02,
+#        -9.9936581478257525e-01, -2.4633220511308673e-02,
+#        -2.5713278499648218e-02, -0.8055043199116624e-02,
+#        2.4568362632753082e-02, -9.9969413160538323e-01,
+#        2.8352762306314006e-03, 4.6283062577704277e-02, 0., 0., 0., 1. ]
+
+
+# body_T_cam0: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: d
+#    data: [0, 0, 1, 0.07,
+#           -1, 0, 0, 0.02,
+#           0, -1, 0, 0.056,
+#           0, 0, 0, 1]
+# body_T_cam1: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: d
+#    data: [0, 0, 1, 0.07,
+#           -1, 0, 0, -0.03,
+#           0, -1, 0, 0.056,
+#           0, 0, 0, 1]
+
+
+# d435i extrinsic
+# body_T_cam0: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: d
+#    data: [ -5.7586305857286746e-03, -4.0463318787729019e-03,
+#        9.9997523237933461e-01, 2.0329267950355900e-02,
+#        -9.9998287214160420e-01, -1.0224590553211677e-03,
+#        -5.7628118925283633e-03, 7.9325209639615653e-03,
+#        1.0457519809151661e-03, -9.9999129084997906e-01,
+#        -4.0403746097850135e-03, 2.8559824645148020e-03, 0., 0., 0., 1. ]
+
+# body_T_cam1: !!opencv-matrix
+#    rows: 4
+#    cols: 4
+#    dt: d
+#    data: [ -1.0021770212322867e-03, 3.6313480322730518e-04,
+#        9.9999943188700535e-01, 1.5285779565991807e-02,
+#        -9.9999216342926500e-01, -3.8303422615924010e-03,
+#        -1.0007788055728661e-03, -5.2435791444330505e-02,
+#        3.8299766679101843e-03, -9.9999259827824449e-01,
+#        3.6697063849344680e-04, 8.6931302450199057e-03, 0., 0., 0., 1. ]
+
+
+
+
+#Multiple thread support
+multiple_thread: 1
+
+#feature traker paprameters
+max_cnt: 150            # max feature number in feature tracking
+min_dist: 30            # min distance between two features 
+freq: 10                # frequence (Hz) of publish tracking result. At least 10Hz for good estimation. If set 0, the frequence will be same as raw image 
+F_threshold: 1.0        # ransac threshold (pixel)
+show_track: 0           # publish tracking image as topic
+flow_back: 1            # perform forward and backward optical flow to improve feature tracking accuracy
+
+#optimization parameters
+max_solver_time: 0.04  # max solver itration time (ms), to guarantee real time
+max_num_iterations: 8   # max solver itrations, to guarantee real time
+keyframe_parallax: 10.0 # keyframe selection threshold (pixel)
+
+#imu parameters       The more accurate parameters you provide, the better performance
+# acc_n: 4.0111384091784538e-01         # accelerometer measurement noise standard deviation. #0.2   0.04
+# gyr_n: 9.4037982238783204e-02        # gyroscope measurement noise standard deviation.     #0.05  0.004
+# acc_w: 5.4017189850550725e-03         # accelerometer bias random work noise standard deviation.  #0.002
+# gyr_w: 3.6674683002548737e-04       # gyroscope bias random work noise standard deviation.     #4.0e-5
+
+acc_n: 0.1          # accelerometer measurement noise standard deviation. #0.2   0.04
+gyr_n: 0.01         # gyroscope measurement noise standard deviation.     #0.05  0.004
+acc_w: 0.001         # accelerometer bias random work noise standard deviation.  #0.002
+gyr_w: 0.0001       # gyroscope bias random work noise standard deviation.     #4.0e-5
+g_norm: 9.805         # gravity magnitude
+
+#worked
+# acc_n: 4.0111384091784538e-01         # accelerometer measurement noise standard deviation. #0.2   0.04
+# gyr_n: 1.037982238783204e-01        # gyroscope measurement noise standard deviation.     #0.05  0.004
+# acc_w: 3.4017189850550725e-03         # accelerometer bias random work noise standard deviation.  #0.002
+# gyr_w: 1.6674683002548737e-04       # gyroscope bias random work noise standard deviation.     #4.0e-5
+# g_norm: 9.805         # gravity magnitude
+
+#unsynchronization parameters
+estimate_td: 1                      # online estimate time offset between camera and imu
+td: -0.01                    # initial value of time offset. unit: s. readed image clock + td = real image clock (IMU clock)
+
+
+#loop closure parameters
+load_previous_pose_graph: 0        # load and reuse previous pose graph; load from 'pose_graph_save_path'
+pose_graph_save_path: "/home/fast/savedfiles/output/pose_graph/" # save and load path
+save_image: 1                   # save image in pose graph for visualization prupose; you can close this function by setting 0 
+
+
+# rosrun kalibr kalibr_calibrate_cameras \
+# --target /home/icondrone2/calibration/src/kalibr/px4_435_cal/april_6x6_A4.yaml \
+# --bag  /home/icondrone2/calibration/src/kalibr/bag/stereo/stereo.bag \
+# --models pinhole-radtan pinhole-radtan \
+# --topics /infra_left /infra_right \
+# --bag-from-to 10 130 --show-extraction --approx-sync 0.1
+
+
+# rosrun kalibr kalibr_calibrate_imu_camera \
+# --target /home/icondrone2/calibration/src/kalibr/px4_435_cal/april_6x6_A4.yaml \
+# --bag  /home/icondrone2/calibration/src/kalibr/bag/stereo_imu/stereo_imu.bag \
+# --cam /home/icondrone2/calibration/src/kalibr/px4_435_cal/stereo-camchain.yaml \
+# --imu /home/icondrone2/calibration/src/kalibr/px4_435_cal/imu.yaml \
+# --bag-from-to 0 128 --show-extraction

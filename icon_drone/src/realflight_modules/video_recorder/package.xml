@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>video_recorder</name>
+  <version>1.0.0</version>
+  <description>Video recording node for drone footage</description>
+  
+  <maintainer email="your@email.com">Your Name</maintainer>
+  <license>MIT</license>
+  
+  <buildtool_depend>catkin</buildtool_depend>
+  
+  <depend>rospy</depend>
+  <depend>sensor_msgs</depend>
+  <depend>cv_bridge</depend>
+  
+  <export></export>
+</package>

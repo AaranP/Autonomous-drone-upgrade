@@ -1,0 +1,8 @@
+<launch>
+  	<!-- <node name="foo_throttler" type="throttle" pkg="topic_tools" args="messages /mavros/imu/data 200 /mavros/imu/data_throttled" /> -->
+	<node name="vins_fusion" pkg="vins"  type="vins_node" output="screen" args="$(find vins)/../config/fast_drone_250.yaml"/>
+	<!-- <node name="synchronize" pkg="vins"  type="synchronize.py" output="screen" /> -->
+	<!-- <node name="loop_fusion" pkg="loop_fusion"  type="loop_fusion_node" args="$(find vins)/../config/fast_drone_250.yaml" output="screen"/> -->
+
+</launch> 
+

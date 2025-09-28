@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Process Flow Diagram</title>
+  <style>
+    .process-container {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      margin: 20px;
+    }
+
+    .process {
+      position: relative;
+      margin: 20px;
+    }
+
+    .process-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 300px;
+      height: 50px;
+      border: 2px solid #000;
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .process-box .progress {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background-color: rgba(0, 128, 0, 0.5);
+      z-index: -1;
+    }
+
+    .subprocess-container {
+      position: relative;
+      margin-left: 50px;
+    }
+
+    .subprocess-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 180px;
+      height: 40px;
+      border: 2px solid #000;
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .subprocess-box .progress {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background-color: rgba(0, 128, 0, 0.5);
+      z-index: -1;
+    }
+
+    .subprocess-container::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: -25px;
+      width: 2px;
+      height: var(--branch-height);
+      background-color: #451bcd;
+    }
+
+    .subprocess-box::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: -25px;
+      width: 25px;
+      height: 2px;
+      background-color: #451bcd;
+    }
+  </style>
+</head>
+<body>
+  <div class="process-container" id="process-container">
+    <!-- Diagram will be rendered here -->
+  </div>
+
+  <script>
+    const data = [
+      {
+        name: "Ubuntu 20.04.6 LTS",
+        subprocesses: [
+          { name: "Installation", progress: 50 },
+          { name: "ROS", progress: 20 },
+          { name: "RealSense SDK", progress: 30 }
+        ]
+      },
+      {
+        name: "Wi-Fi",
+        subprocesses: [
+          { name: "Method",
+           subprocesses: [
+             { name: "Method Type", progress: 80 },
+             { name: "Component Selection", progress: 90},
+             { name: "Data flow plan", progress: 80}
+           ] 
+          },
+          { name: "Link Budget", progress: 100 }
+        ]
+      },
+      {
+        name: "Raspberry Pi 4",
+        subprocesses: [
+          {
+            name: "Initialization",
+            subprocesses: [
+              { name: "OS", progress: 100 } // New subprocess added here
+            ]
+          },
+          { 
+            name: "Wi-Fi",
+            subprocesses: [
+              { name: "Initialization", progress: 100 },
+              { name: "Software Pipeline", 
+               subprocesses: [
+                 { name: "Data flow plan", progress: 80},
+                 { name: "Data to Local Host", progress: 50},
+                 { name: "Data to RPi", progress: 20}
+               ]
+              }
+            ]
+          },
+          { name: "ROS", progress: 0 },
+          { name: "Camera", progress: 30 },
+          { name: "Thermal Camera", progress: 0 },
+          { name: "Air Quality Sensor", progress: 0 }
+        ]
+      },
+      {
+        name: "Depth Estimation",
+        subprocesses: [
+          { name: "Method",
+            subprocesses: [
+              { name: "Stereo Vision", progress: 50 },
+              { name: "Monocular DL",
+                subprocesses: [
+                  { name: "Software Pipeline", progress: 70 },
+                  { name: "Calibration", progress: 60 },
+                  { name: "Latency Testing", progress: 40 }
+                ]
+              }
+            ]
+          },
+        ]
+      }
+    ];
+
+    function calculateProgress(process) {
+      if (process.progress !== undefined) return process.progress;
+
+      const totalProgress = process.subprocesses.reduce((sum, sp) => sum + calculateProgress(sp), 0);
+      return Math.round(totalProgress / process.subprocesses.length);
+    }
+
+    function renderProcessFlow(data, container = null, isSubprocess = false) {
+      if (!container) {
+        container = document.getElementById("process-container");
+      }
+
+      data.forEach(process => {
+        const processProgress = calculateProgress(process);
+
+        // Determine the class based on whether it's a subprocess or a main process
+        const boxClass = isSubprocess ? "subprocess-box" : "process-box";
+
+        // Create process or subprocess box
+        const processBox = document.createElement("div");
+        processBox.className = boxClass;
+        processBox.innerHTML = `<span>${process.name} (${processProgress}%)</span>`;
+        processBox.innerHTML += `<div class="progress" style="width: ${processProgress}%;"></div>`;
+
+        // Append process or subprocess box
+        const processElement = document.createElement("div");
+        processElement.className = isSubprocess ? "subprocess" : "process";
+        processElement.appendChild(processBox);
+
+        // Create subprocesses if they exist
+        if (process.subprocesses) {
+          const subprocessContainer = document.createElement("div");
+          subprocessContainer.className = "subprocess-container";
+
+          // Recursively render subprocesses, marking them as subprocesses
+          renderProcessFlow(process.subprocesses, subprocessContainer, true);
+
+          processElement.appendChild(subprocessContainer);
+        }
+
+        container.appendChild(processElement);
+      });
+    }
+
+    function adjustBranchHeights() {
+      const subprocessContainers = document.querySelectorAll('.subprocess-container:not(:empty)');
+
+      subprocessContainers.forEach(container => {
+        const subprocesses = container.querySelectorAll('.subprocess-box');
+        if (subprocesses.length > 0) {
+          const firstSubprocess = subprocesses[0];
+          const lastSubprocess = subprocesses[subprocesses.length - 1];
+
+          // Calculate the height between the first and last subprocess
+          const containerHeight = lastSubprocess.getBoundingClientRect().bottom - firstSubprocess.getBoundingClientRect().top;
+
+          // Apply the calculated height to the vertical branch
+          container.style.setProperty('--branch-height', `${containerHeight - 10}px`);
+        }
+      });
+    }
+
+    // Call this function after rendering the process flow
+    renderProcessFlow(data);
+    adjustBranchHeights();
+  </script>
+</body>
+</html>

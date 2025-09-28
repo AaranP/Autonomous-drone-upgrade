@@ -1,0 +1,13 @@
+<package format="2">
+  <name>Depth-Anything</name>
+  <version>0.0.1</version>
+  <description>ROS wrapper for Depth-Anything V2</description>
+  <maintainer email="you@example.com">Your Name</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>rospy</depend>
+  <depend>sensor_msgs</depend>
+  <depend>cv_bridge</depend>
+</package>
