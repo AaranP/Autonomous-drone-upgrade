@@ -1,8 +1,0 @@
-<launch>
-    <node name="depth_anything_node" pkg="Depth-Anything" type="depth_anything_node.py" output="screen">
-        <param name="encoder" value="vits"/>
-        <param name="max_depth" value="20.0"/>
-        <param name="model_path" value="$(env HOME)/checkpoints/depth_anything_v2_metric_hypersim_vits.pth"/>
-        <param name="intrinsics_path" value="$(env HOME)/Documents/ELEC491_TL101/icon_drone/src/Depth-Anything/camera_intrinsics.yml"/>
-    </node>
-</launch>
