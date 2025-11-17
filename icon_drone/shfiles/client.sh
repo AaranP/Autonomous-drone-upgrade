@@ -11,8 +11,8 @@ sudo systemctl restart chrony
 pkill -f ros & sleep 3
 
 # Set ROS networking
-export ROS_MASTER_URI=http://192.168.0.179:11311
-export ROS_HOSTNAME=192.168.0.100
+export ROS_MASTER_URI=http://128.189.246.106:11311 
+export ROS_HOSTNAME=206.87.208.93
 
 # Start decompression republishers
 rosrun image_transport republish compressed in:=/image1 raw out:=/vins/image1 & sleep 2

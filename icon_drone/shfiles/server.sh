@@ -17,8 +17,8 @@ pkill -f ros & sleep 5
 roscore & sleep 5
 
 # Set ROS networking
-export ROS_MASTER_URI=http://192.168.0.101:11311
-export ROS_HOSTNAME=192.168.0.101
+export ROS_MASTER_URI=http://128.189.246.106:11311 
+export ROS_HOSTNAME=128.189.246.106
 
 # Launch necessary modules in background
 roslaunch fdilink_ahrs ahrs_data.launch & sleep 5
