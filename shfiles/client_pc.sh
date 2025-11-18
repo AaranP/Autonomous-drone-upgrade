@@ -2,6 +2,17 @@
 
 echo "--- Setting up ROS Network Configuration for Ground Station ---"
 
+# Setup ROS environment
+source /opt/ros/noetic/setup.bash
+source ~/kw076/Autonomous-drone-upgrage/icon_drone/devel/setup.bash
+
+# Sync system clock
+#sudo systemctl restart chrony
+
+# Reset any existing ROS nodes
+pkill -f ros & sleep 5
+
+
 # Get the primary IP address of the remote computer (assuming macOS for the user)
 REMOTE_IP=$(ipconfig getifaddr en0 || hostname -I | awk '{print $1}') # Fallback for Linux
 
@@ -52,3 +63,14 @@ echo "$ONBOARD_IP $ONBOARD_HOSTNAME_ALIAS" | sudo tee -a /etc/hosts > /dev/null
 echo "Added '$ONBOARD_IP $ONBOARD_HOSTNAME_ALIAS' to /etc/hosts."
 echo "Configuration saved to ~/.bashrc and /etc/hosts. Please run 'source ~/.bashrc' or open a new terminal."
 echo "Setup complete for Ground Station."
+##############################
+##############################
+# Setup ROS environment for Ground Station Client (PC)
+##############################
+##############################
+
+
+# Set display (for RViz if needed)
+export DISPLAY=:0
+
+echo "Client PC setup complete. Video recorder ready for remote commands."
