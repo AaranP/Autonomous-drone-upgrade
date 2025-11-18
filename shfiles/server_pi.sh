@@ -1,32 +1,53 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
 
-echo "--- Setting up ROS Network Configuration for Onboard (Pi) Computer ---"
+# Setup ROS environment
+source /opt/ros/noetic/setup.bash
+source ~/ELEC491_TL101/icon_drone/devel/setup.bash
 
-# Hardcoded Pi (onboard) IP configuration
-# Edit these values to match your Pi before running this script.
-ONBOARD_IP="128.189.246.106"   # IP address of the Raspberry Pi (ROS master)
+# Set display (for RViz if needed)
+export DISPLAY=:0
 
-echo "Using hardcoded Onboard IP Address: $ONBOARD_IP"
+# Sync system clock
+#sudo systemctl restart chrony
 
-# Define ROS environment variables (Pi acts as ROS master)
-ROS_MASTER_URI="http://$ONBOARD_IP:11311"
-ROS_IP="$ONBOARD_IP"
+# Reset any existing ROS nodes
+pkill -f ros & sleep 5
 
-echo "Adding/Updating ROS environment variables in ~/.bashrc..."
+# Start ROS core in background
+roscore & sleep 5
 
-# Backup ~/.bashrc (timestamped) then remove any previous ROS entries
-if [ -f "$HOME/.bashrc" ]; then
-  cp -f "$HOME/.bashrc" "$HOME/.bashrc.rviz_backup_$(date +%s)" || true
-fi
-sed -i.bak '/^export ROS_MASTER_URI=/d' "$HOME/.bashrc" 2>/dev/null || true
-sed -i.bak '/^export ROS_IP=/d' "$HOME/.bashrc" 2>/dev/null || true
+# Set ROS networking
+export ROS_MASTER_URI=http://128.189.246.106:11311 
+export ROS_HOSTNAME=128.189.246.106
 
-# Append new values
-printf "%s\n" "export ROS_MASTER_URI=\"$ROS_MASTER_URI\"" >> "$HOME/.bashrc"
-printf "%s\n" "export ROS_IP=\"$ROS_IP\"" >> "$HOME/.bashrc"
+# Launch necessary modules in background
+roslaunch fdilink_ahrs ahrs_data.launch & sleep 5
+roslaunch mavros px4.launch & sleep 5
+# rosrun mavros mavsys rate --all 100
 
-echo "ROS_MASTER_URI set to: $ROS_MASTER_URI"
-echo "ROS_IP set to: $ROS_IP"
-echo "Configuration saved to ~/.bashrc. Please run 'source ~/.bashrc' or open a new terminal." 
-echo "Setup complete for Onboard Computer."
+# Launch RealSense with optimized config
+roslaunch realsense2_camera rs_camera.launch \
+  enable_color:=false \
+  enable_depth:=true \
+  enable_infra1:=true \
+  enable_infra2:=true \
+  enable_gyro:=true \
+  enable_accel:=true \
+  enable_pointcloud:=false \
+  enable_sync:=true \
+  unite_imu_method:=none \
+  depth_width:=640 depth_height:=480 depth_fps:=30 \
+  infra_width:=640 infra_height:=480 infra_fps:=30 \
+  align_depth:=false \
+  & sleep 5
+
+# Start IR image compression
+#rosrun image_transport republish raw in:=/camera/infra1/image_rect_raw compressed out:=/image1 &
+#rosrun image_transport republish raw in:=/camera/infra2/image_rect_raw compressed out:=/image2 &
+
+roslaunch px4ctrl run_ctrl.launch & sleep 5
+
+# Start video recording node (ready to receive commands)
+roslaunch video_recorder video_recorder.launch &
+
+echo "Server setup complete. Video recorder ready for remote commands."
