@@ -16,8 +16,8 @@ source ~/KW076/Autonomous-drone-upgrade/icon_drone/devel/setup.bash
 pkill -f ros & sleep 3
 
 # Set ROS networking
-export ROS_MASTER_URI=http://128.189.246.106:11311 
-export ROS_HOSTNAME=128.189.246.106
+export ROS_MASTER_URI=http://128.189.245.13:11311 
+export ROS_HOSTNAME=128.189.245.13
 
 roscore & sleep 3
 
