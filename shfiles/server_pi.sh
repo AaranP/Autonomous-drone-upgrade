@@ -22,7 +22,8 @@ export ROS_HOSTNAME=128.189.245.13
 roscore & sleep 3
 
 # Launch VINS and FUEL in parallel
-roslaunch vins fast_drone_250.launch & sleep 2
+# roslaunch vins fast_drone_250.launch & sleep 2
+roslaunch /KW076/Autonomous-drone-upgrade/src/realflight_modules/VINS-Fusion/vins_estimator/launch/fast_drone_250.launch & sleep 2
 roslaunch exploration_manager exploration.launch rviz:=false & sleep 2
 roslaunch px4ctrl run_ctrl.launch & sleep 2
 
