@@ -10,7 +10,7 @@ source ~/KW076/Autonomous-drone-upgrade/icon_drone/devel/setup.bash
 # export DISPLAY=:0
 
 # Sync system clock
-sudo systemctl restart chrony
+#sudo systemctl restart chrony
 
 # Reset any existing ROS nodes
 pkill -f ros & sleep 3
