@@ -69,5 +69,5 @@ echo "Configuration saved to ~/.bashrc and /etc/hosts. Please run 'source ~/.bas
 echo "Setup complete for Linux Ground Station."
 echo "Starting ROS and running RViz..."
 source /opt/ros/noetic/setup.bash
-source ~/Fast-Drone-250/devel/setup.bash # Adjust path if your workspace is different
+source kw076/Autonomous-drone-upgrade/devel/setup.bash # Adjust path if your workspace is different
 roslaunch ego_planner rviz.launch
