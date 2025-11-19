@@ -16,9 +16,20 @@ fi
 echo "Configured Raspberry Pi IP Address: $ONBOARD_IP"
 echo "Configured Ground Station IP Address: $GROUND_IP"
 
+# Clean up all ROS environment variables from current shell
+unset ROS_MASTER_URI
+unset ROS_IP
+unset ROS_HOSTNAME
+unset ROS_PACKAGE_PATH
+unset ROS_DISTRO
+unset ROS_ROOT
+
+# Remove ROS_HOSTNAME from ~/.bashrc if it exists
+sed -i '/^export ROS_HOSTNAME=/d' ~/.bashrc
+
 # Define ROS environment variables to connect to the Pi's ROS Master
-ROS_MASTER_URI="http://$ONBOARD_IP:11311"
-ROS_IP="$GROUND_IP"
+export ROS_MASTER_URI="http://$ONBOARD_IP:11311"
+export ROS_IP="$GROUND_IP"
 
 # Add/Update ROS environment variables in .bashrc for persistence
 echo "Adding/Updating ROS environment variables in ~/.bashrc..."
