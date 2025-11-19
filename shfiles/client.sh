@@ -67,3 +67,7 @@ echo "$ONBOARD_IP $ONBOARD_HOSTNAME_ALIAS" | sudo tee -a /etc/hosts > /dev/null
 echo "Added '$ONBOARD_IP $ONBOARD_HOSTNAME_ALIAS' to /etc/hosts."
 echo "Configuration saved to ~/.bashrc and /etc/hosts. Please run 'source ~/.bashrc' or open a new terminal."
 echo "Setup complete for Linux Ground Station."
+echo "Starting ROS and running RViz..."
+source /opt/ros/noetic/setup.bash
+source ~/Fast-Drone-250/devel/setup.bash # Adjust path if your workspace is different
+roslaunch ego_planner rviz.launch
