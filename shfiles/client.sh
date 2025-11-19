@@ -39,8 +39,8 @@ fi
 echo "Dynamically resolved Raspberry Pi IP Address: $ONBOARD_IP"
 
 # Define ROS environment variables to connect to the Pi's ROS Master
-ROS_MASTER_URI="http://$ONBOARD_IP:11311"
-ROS_HOSTNAME="$REMOTE_IP"
+ROS_MASTER_URI="http://128.189.245.13:11311"
+ROS_HOSTNAME="128.189.245.13"
 
 # Add/Update ROS environment variables in .bashrc for persistence
 echo "Adding/Updating ROS environment variables in ~/.bashrc..."
@@ -69,5 +69,4 @@ echo "Configuration saved to ~/.bashrc and /etc/hosts. Please run 'source ~/.bas
 echo "Setup complete for Linux Ground Station."
 echo "Starting ROS and running RViz..."
 source /opt/ros/noetic/setup.bash
-source kw076/Autonomous-drone-upgrade/devel/setup.bash # Adjust path if your workspace is different
-roslaunch ego_planner rviz.launch
+source home/arunark/kw076/Autonomous-drone-upgrade/devel/setup.bash # Adjust path if your workspace is different
