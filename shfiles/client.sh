@@ -5,7 +5,7 @@ echo "--- Setting up ROS Network Configuration for Linux Ground Station ---"
 # ===== EDIT THESE VALUES FOR YOUR NETWORK =====
 ONBOARD_IP="128.189.245.13"          # Pi's IP address
 ONBOARD_HOSTNAME_ALIAS="raspberrypi"   # Pi's hostname alias (optional, for /etc/hosts)
-GROUND_IP="206.87.209.35"            # Ground Station (PC) IP address
+GROUND_IP=$(hostname -I |awk '{print $1}')           # Ground Station (PC) IP address
 # ===== END CONFIGURATION =====
 
 if [ -z "$ONBOARD_IP" ] || [ -z "$GROUND_IP" ]; then

@@ -2,17 +2,22 @@
 
 echo "--- Setting up ROS Network Configuration for Raspberry Pi (Onboard Computer) ---"
 
-# ===== EDIT THESE VALUES FOR YOUR NETWORK =====
-ONBOARD_IP="128.189.245.13"          # Pi's IP address
-ROS_HOSTNAME="128.189.245.13"        # Pi's hostname or IP (usually same as ONBOARD_IP)
-# ===== END CONFIGURATION =====
+# ===== AUTOMATICALLY DETECT IP ADDRESS =====
+# Get the primary IP address of the current machine
+# This command typically returns the IP address(es) of the active network interface(s).
+# We take the first one found.
+ONBOARD_IP=$(hostname -I | awk '{print $1}')
 
 if [ -z "$ONBOARD_IP" ]; then
-    echo "Error: ONBOARD_IP is not set. Please edit the script and set your Pi's IP address."
+    echo "Error: Could not automatically determine the IP address of this machine."
+    echo "Please ensure you are connected to a network and try again, or manually set ONBOARD_IP."
     exit 1
 fi
 
-echo "Configured Raspberry Pi IP Address: $ONBOARD_IP"
+ROS_HOSTNAME="$ONBOARD_IP" # Pi's hostname or IP (usually same as ONBOARD_IP)
+# ===== END CONFIGURATION =====
+
+echo "Automatically detected IP Address: $ONBOARD_IP"
 
 # Define ROS environment variables to point to itself (as ROS Master)
 ROS_MASTER_URI="http://$ONBOARD_IP:11311"
