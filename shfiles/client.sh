@@ -60,4 +60,4 @@ echo "Configuration saved to ~/.bashrc. Please run 'source ~/.bashrc' or open a 
 echo "Setup complete for Linux Ground Station."
 
 source /opt/ros/noetic/setup.bash
-source ~/kw076/Autonomous-drone-upgrades/devel/setup.bash
+source ~/kw076/Autonomous-drone-upgrade/devel/setup.bash

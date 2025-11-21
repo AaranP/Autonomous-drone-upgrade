@@ -39,4 +39,4 @@ echo "Configuration saved to ~/.bashrc. Please run 'source ~/.bashrc' or open a 
 echo "Setup complete for Raspberry Pi."
 
 source /opt/ros/noetic/setup.bash
-source ~/KW076/Autonomous-drone-upgrades/devel/setup.bash
+source ~/KW076/Autonomous-drone-upgrade/devel/setup.bash
