@@ -13,7 +13,7 @@ image1_topic: "/camera/infra2/image_rect_raw"
 
 
 
-output_path: "/home/fast-drone/vins_output"
+output_path: "/home/arunark/KW076/Autonomous-drone-upgrade/vins_output"
 
 
 cam0_calib: "left.yaml"
