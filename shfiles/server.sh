@@ -32,3 +32,6 @@ echo "ROS_MASTER_URI set to: $ROS_MASTER_URI"
 echo "ROS_HOSTNAME set to: $ROS_HOSTNAME"
 echo "Configuration saved to ~/.bashrc. Please run 'source ~/.bashrc' or open a new terminal."
 echo "Setup complete for Raspberry Pi."
+
+source /opt/ros/noetic/setup.bash
+source ~/KW076/Autonomous-drone-upgrades/devel/setup.bash
