@@ -11,19 +11,17 @@ echo "--- Setting up ROS Network Configuration for Linux Ground Station ---"
 # Common default for Raspberry Pi is 'raspberrypi'. If using mDNS, it might be 'raspberrypi.local'.
 ONBOARD_HOSTNAME_ALIAS="raspberrypi"
 
-# Ground Station (PC/Mac) WiFi IP - automatically detected (en0 typical WiFi)
-GROUND_IP=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || hostname | cut -d. -f1)
+# Ground Station (PC) IP address - automatically detected
+GROUND_IP=$(hostname -I | awk '{print $1}')
 # ===== END CONFIGURATION =====
 
 # Attempt to resolve the Raspberry Pi's IP address from its hostname alias
 ONBOARD_IP="" # Initialize to empty
 if [ -n "$ONBOARD_HOSTNAME_ALIAS" ]; then
-    echo "Attempting to resolve Raspberry Pi WiFi IP from hostname: $ONBOARD_HOSTNAME_ALIAS(.local)"
-    # macOS-compatible: ping mDNS/DNS (prioritizes pingable WiFi IP), fallback nslookup
-    PING_RSLT=$(ping -c1 -W2 "$ONBOARD_HOSTNAME_ALIAS.local" 2>/dev/null | awk 'NR==2 && /bytes from/ {print $4}' | cut -d: -f1 || \
-                ping -c1 -W2 "$ONBOARD_HOSTNAME_ALIAS" 2>/dev/null | awk 'NR==2 && /bytes from/ {print $4}' | cut -d: -f1 || \
-                echo "")
-    ONBOARD_IP=$(echo "$PING_RSLT" | head -n1 | xargs)
+    echo "Attempting to resolve Raspberry Pi IP from hostname: $ONBOARD_HOSTNAME_ALIAS"
+    # Use getent hosts to query DNS/hosts file/mDNS for the IP
+    # 'head -n 1' ensures we only take the first IP if multiple are returned
+    ONBOARD_IP=$(getent hosts "$ONBOARD_HOSTNAME_ALIAS" | awk '{print $1}' | head -n 1)
 fi
 
 # Check if ONBOARD_IP was successfully determined

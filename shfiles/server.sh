@@ -3,25 +3,16 @@
 echo "--- Setting up ROS Network Configuration for Raspberry Pi (Onboard Computer) ---"
 
 # ===== AUTOMATICALLY DETECT IP ADDRESS =====
-# Prioritize WiFi (wlan0) IP for ROS reachability from ground station
-ONBOARD_IP=$(ip -4 addr show wlan0 2>/dev/null | awk '/inet / {print $2}' | cut -d/ -f1 | head -1)
-
-# Fallback: default route outbound IP
-if [ -z "$ONBOARD_IP" ]; then
-  ONBOARD_IP=$(ip route get 8.8.8.8 2>/dev/null | awk '{print $7; exit}')
-fi
-
-# Final fallback: hostname -I
-if [ -z "$ONBOARD_IP" ]; then
-  ONBOARD_IP=$(hostname -I | awk '{print $1}')
-fi
+# Get the primary IP address of the current machine
+# This command typically returns the IP address(es) of the active network interface(s).
+# We take the first one found.
+ONBOARD_IP=$(hostname -I | awk '{print $1}')
 
 if [ -z "$ONBOARD_IP" ]; then
-    echo "Error: Could not automatically determine WiFi IP. Ensure wlan0 is connected."
+    echo "Error: Could not automatically determine the IP address of this machine."
+    echo "Please ensure you are connected to a network and try again, or manually set ONBOARD_IP."
     exit 1
 fi
-
-echo "Prioritized WiFi IP: $ONBOARD_IP (wlan0)"
 
 ROS_HOSTNAME="$ONBOARD_IP" # Pi's hostname or IP (usually same as ONBOARD_IP)
 # ===== END CONFIGURATION =====
