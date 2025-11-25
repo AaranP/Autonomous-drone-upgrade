@@ -6,4 +6,4 @@ ls /proc/sys/fs/binfmt_misc
 docker build --platform linux/amd64 -t fast_drone_noetic .
 
 
-#It would take like 10 -15 minutes to build
+#It would take like an hour or two  to build

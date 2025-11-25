@@ -6,7 +6,7 @@ docker run -it --rm \
     -e DISPLAY=$DISPLAY \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
     -v /dev:/dev \
-    -v $(pwd)/src/Fast-Drone-250/config:/root/catkin_ws/src/Fast-Drone-250/config \
+    -v $(pwd)/src/fastdrone/config:/root/catkin_ws/src/fastdrone/config \
     -v $(pwd)/shfiles:/root/shfiles \
     fast_drone_noetic \
     /bin/bash

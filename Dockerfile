@@ -51,8 +51,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install GeographicLib datasets for MAVROS
 RUN /opt/ros/noetic/lib/mavros/install_geographiclib_datasets.sh
 
-# Clone Ego-Planner (Fast-Drone-250)
-COPY . /root/catkin_ws/src/Fast-Drone-250/
+# Clone Ego-Planner (fastdrone)
+COPY . /root/catkin_ws/src/fastdrone/
 
 # Build the entire catkin workspace
 WORKDIR /root/catkin_ws
@@ -66,7 +66,7 @@ EXPOSE 22
 # Configure environment for ROS
 RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
 RUN echo "source /root/catkin_ws/devel/setup.bash" >> ~/.bashrc
-RUN echo "export ROS_MASTER_URI=http://localhost:11311" >> ~/.bashrc
-RUN echo "export ROS_HOSTNAME=localhost" >> ~/.bashrc
+RUN echo "export ROS_MASTER_URI=http://ledrone:11311" >> ~/.bashrc
+RUN echo "export ROS_HOSTNAME=ledrone" >> ~/.bashrc
 
 CMD ["/bin/bash"]
