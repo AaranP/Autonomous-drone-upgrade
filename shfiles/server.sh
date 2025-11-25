@@ -35,8 +35,15 @@ echo "export ROS_HOSTNAME=\"$ROS_HOSTNAME\"" >> ~/.bashrc
 
 echo "ROS_MASTER_URI set to: $ROS_MASTER_URI"
 echo "ROS_HOSTNAME set to: $ROS_HOSTNAME"
-echo "Configuration saved to ~/.bashrc. Please run 'source ~/.bashrc' or open a new terminal."
-echo "Setup complete for Raspberry Pi."
+#echo "Configuration saved to ~/.bashrc. Please run 'source ~/.bashrc' or open a new terminal."
 
+# Removed: Modifying ~/.bashrc is not suitable for ephemeral Docker containers.
+# Removed: Modifying /etc/hosts is not suitable for Docker containers and often not needed if using IP for ROS_MASTER_URI.
+
+# Source ROS setup files for the current shell session within the container
+# These should already be sourced by the Dockerfile's .bashrc, but explicit sourcing
+# ensures they are available if the script is run in a non-interactive shell.
 source /opt/ros/noetic/setup.bash
-source ~/KW076/Autonomous-drone-upgrade/devel/setup.bash
+source /root/catkin_ws/devel/setup.bash # Assuming your ground station also needs workspace packages
+
+echo "Setup complete for Raspberry pi."

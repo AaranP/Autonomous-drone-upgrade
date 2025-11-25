@@ -9,7 +9,7 @@ echo "--- Setting up ROS Network Configuration for Linux Ground Station ---"
 
 # The hostname alias for your Raspberry Pi. This is used to automatically resolve its IP.
 # Common default for Raspberry Pi is 'raspberrypi'. If using mDNS, it might be 'raspberrypi.local'.
-ONBOARD_HOSTNAME_ALIAS="raspberrypi"
+ONBOARD_HOSTNAME_ALIAS="ledrone"
 
 # Ground Station (PC) IP address - automatically detected
 GROUND_IP=$(hostname -I | awk '{print $1}')
@@ -50,40 +50,20 @@ unset ROS_PACKAGE_PATH
 unset ROS_DISTRO
 unset ROS_ROOT
 
-# Remove ROS_HOSTNAME from ~/.bashrc if it exists
-sed -i '/^export ROS_HOSTNAME=/d' ~/.bashrc
-
 # Define ROS environment variables to connect to the Pi's ROS Master
 export ROS_MASTER_URI="http://$ONBOARD_IP:11311"
-export ROS_IP="$GROUND_IP"
-
-# Add/Update ROS environment variables in .bashrc for persistence
-echo "Adding/Updating ROS environment variables in ~/.bashrc..."
-
-# Remove existing ROS_MASTER_URI, ROS_IP, ROS_HOSTNAME lines to avoid duplicates
-sed -i '/^export ROS_MASTER_URI=/d' ~/.bashrc
-sed -i '/^export ROS_IP=/d' ~/.bashrc
-sed -i '/^export ROS_HOSTNAME=/d' ~/.bashrc
-
-# Add new lines
-echo "export ROS_MASTER_URI=\"$ROS_MASTER_URI\"" >> ~/.bashrc
-echo "export ROS_IP=\"$ROS_IP\"" >> ~/.bashrc
+export ROS_IP="$GROUND_IP" # ROS_IP is used by local nodes to advertise themselves
 
 echo "ROS_MASTER_URI set to: $ROS_MASTER_URI"
 echo "ROS_IP set to: $ROS_IP"
 
-# Add/Update entry in /etc/hosts for the onboard computer (optional)
-if [ -n "$ONBOARD_HOSTNAME_ALIAS" ]; then
-    echo "Adding/Updating entry for '$ONBOARD_HOSTNAME_ALIAS' in /etc/hosts..."
-    # Remove existing entry for the alias if it exists
-    sudo sed -i "/\s$ONBOARD_HOSTNAME_ALIAS$/d" /etc/hosts
-    # Add the new entry
-    echo "$ONBOARD_IP $ONBOARD_HOSTNAME_ALIAS" | sudo tee -a /etc/hosts > /dev/null
-    echo "Added '$ONBOARD_IP $ONBOARD_HOSTNAME_ALIAS' to /etc/hosts."
-fi
+# Removed: Modifying ~/.bashrc is not suitable for ephemeral Docker containers.
+# Removed: Modifying /etc/hosts is not suitable for Docker containers and often not needed if using IP for ROS_MASTER_URI.
 
-echo "Configuration saved to ~/.bashrc. Please run 'source ~/.bashrc' or open a new terminal."
-echo "Setup complete for Linux Ground Station."
-
+# Source ROS setup files for the current shell session within the container
+# These should already be sourced by the Dockerfile's .bashrc, but explicit sourcing
+# ensures they are available if the script is run in a non-interactive shell.
 source /opt/ros/noetic/setup.bash
-source ~/kw076/Autonomous-drone-upgrade/devel/setup.bash
+source /root/catkin_ws/devel/setup.bash # Assuming your ground station also needs workspace packages
+
+echo "Setup complete for Linux Ground Station."
