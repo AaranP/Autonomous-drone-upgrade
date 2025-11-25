@@ -8,7 +8,16 @@ echo "--- Setting up ROS Network Configuration for Ground Station ---"
 ONBOARD_HOSTNAME_ALIAS="ledrone" # Using 'ledrone' as per your Dockerfile
 
 # Ground Station (PC) IP address - automatically detected
-GROUND_IP=$(hostname -I | awk '{print $1}')
+# GROUND_IP=$(hostname -I | awk '{print $1}') # This gets the WSL2 internal IP
+
+# Use the host IP passed from run_groundstation_container.sh if available
+if [ -n "$GROUND_STATION_HOST_IP" ]; then
+    GROUND_IP="$GROUND_STATION_HOST_IP"
+    echo "Using Ground Station Host IP from environment: $GROUND_IP"
+else
+    GROUND_IP=$(hostname -I | awk '{print $1}')
+    echo "Detected Ground Station IP Address (WSL2 internal): $GROUND_IP"
+fi
 # ===== END CONFIGURATION =====
 
 # Check if Ground Station IP was successfully determined
