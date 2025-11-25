@@ -5,8 +5,6 @@ docker run -it --rm \
     --name fast_drone_container \
     --privileged \
     --network=host \
-    # -e DISPLAY=$DISPLAY \ # Remove this line for headless server
-    # -v /tmp/.X11-unix:/tmp/.X11-unix \ # Remove this line for headless server
     -v /dev:/dev \
     -v $(pwd)/src/fastdrone/config:/root/catkin_ws/src/fastdrone/config \
     -v $(pwd)/shfiles:/root/shfiles \
