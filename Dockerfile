@@ -1,8 +1,8 @@
 # Use a ROS Noetic base image
 FROM osrf/ros:noetic-desktop-full
 # Set up environment variables
-ENV HOME /root
-ENV DEBIAN_FRONTEND noninteractive
+ENV HOME=/root
+ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /root/catkin_ws/src
 
 # Install system dependencies
@@ -18,7 +18,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libeigen3-dev \
     libsuitesparse-dev \
     liblapack-dev \
-    libcxsparse3.1.2 \
+    libceres-dev \
+    libyaml-cpp-dev \
+    libomp-dev \
+    ros-noetic-pcl-ros \
     terminator \
     net-tools \
     openssh-server \
