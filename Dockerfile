@@ -1,6 +1,5 @@
 # Use a ROS Noetic base image
-FROM ros:noetic-desktop-full
-
+FROM osrf/ros:noetic-desktop-full
 # Set up environment variables
 ENV HOME /root
 ENV DEBIAN_FRONTEND noninteractive
