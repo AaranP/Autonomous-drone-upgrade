@@ -1,36 +1,15 @@
 #!/bin/bash
 
-echo "--- Setting up ROS Network Configuration for Linux Ground Station ---"
+echo "--- Setting up ROS Network Configuration for Ground Station ---"
 
 # ===== CONFIGURATION FOR YOUR NETWORK =====
-# The Raspberry Pi's IP address will be automatically determined if its hostname is resolvable.
-# If automatic detection fails, you may need to uncomment and manually set ONBOARD_IP.
-# ONBOARD_IP="128.189.245.13"
-
 # The hostname alias for your Raspberry Pi. This is used to automatically resolve its IP.
 # Common default for Raspberry Pi is 'raspberrypi'. If using mDNS, it might be 'raspberrypi.local'.
-ONBOARD_HOSTNAME_ALIAS="ledrone"
+ONBOARD_HOSTNAME_ALIAS="ledrone" # Using 'ledrone' as per your Dockerfile
 
 # Ground Station (PC) IP address - automatically detected
 GROUND_IP=$(hostname -I | awk '{print $1}')
 # ===== END CONFIGURATION =====
-
-# Attempt to resolve the Raspberry Pi's IP address from its hostname alias
-ONBOARD_IP="" # Initialize to empty
-if [ -n "$ONBOARD_HOSTNAME_ALIAS" ]; then
-    echo "Attempting to resolve Raspberry Pi IP from hostname: $ONBOARD_HOSTNAME_ALIAS"
-    # Use getent hosts to query DNS/hosts file/mDNS for the IP
-    # 'head -n 1' ensures we only take the first IP if multiple are returned
-    ONBOARD_IP=$(getent hosts "$ONBOARD_HOSTNAME_ALIAS" | awk '{print $1}' | head -n 1)
-fi
-
-# Check if ONBOARD_IP was successfully determined
-if [ -z "$ONBOARD_IP" ]; then
-    echo "Error: Could not automatically determine the IP address for Raspberry Pi using hostname '$ONBOARD_HOSTNAME_ALIAS'."
-    echo "Please ensure the Raspberry Pi is on the network and its hostname is resolvable (e.g., via mDNS as raspberrypi.local)."
-    echo "Alternatively, uncomment and manually set the 'ONBOARD_IP' variable in this script."
-    exit 1
-fi
 
 # Check if Ground Station IP was successfully determined
 if [ -z "$GROUND_IP" ]; then
@@ -38,9 +17,40 @@ if [ -z "$GROUND_IP" ]; then
     echo "Please ensure this machine is connected to a network."
     exit 1
 fi
-
-echo "Detected Raspberry Pi IP Address: $ONBOARD_IP"
 echo "Detected Ground Station IP Address: $GROUND_IP"
+
+# --- Attempt to resolve Raspberry Pi IP or prompt for manual input ---
+ONBOARD_IP="" # Initialize to empty
+while true; do
+    if [ -z "$ONBOARD_IP" ]; then # Only attempt auto-resolution if IP is not yet set (first loop iteration)
+        if [ -n "$ONBOARD_HOSTNAME_ALIAS" ]; then
+            echo "Attempting to resolve Raspberry Pi IP from hostname: $ONBOARD_HOSTNAME_ALIAS"
+            # Use getent hosts to query DNS/hosts file/mDNS for the IP
+            ONBOARD_IP=$(getent hosts "$ONBOARD_HOSTNAME_ALIAS" | awk '{print $1}' | head -n 1)
+        fi
+    fi
+
+    if [ -z "$ONBOARD_IP" ]; then
+        echo "--------------------------------------------------------------------------------"
+        echo "WARNING: Could not automatically determine the IP address for Raspberry Pi using hostname '$ONBOARD_HOSTNAME_ALIAS'."
+        echo "Please ensure the Raspberry Pi is on the network and its hostname is resolvable (e.g., via mDNS as raspberrypi.local)."
+        read -p "Please manually enter the Raspberry Pi's IP address (e.g., 192.168.1.100): " MANUAL_IP
+        if [ -z "$MANUAL_IP" ]; then
+            echo "No IP address entered. Exiting."
+            exit 1
+        fi
+        ONBOARD_IP="$MANUAL_IP"
+    fi
+
+    # Basic validation for the entered IP (non-empty)
+    if [ -n "$ONBOARD_IP" ]; then
+        echo "Using Raspberry Pi IP Address: $ONBOARD_IP"
+        break # Exit loop if IP is set
+    else
+        echo "Invalid IP address. Please try again."
+        ONBOARD_IP="" # Reset to try again
+    fi
+done
 
 # Clean up all ROS environment variables from current shell
 unset ROS_MASTER_URI
@@ -57,13 +67,24 @@ export ROS_IP="$GROUND_IP" # ROS_IP is used by local nodes to advertise themselv
 echo "ROS_MASTER_URI set to: $ROS_MASTER_URI"
 echo "ROS_IP set to: $ROS_IP"
 
-# Removed: Modifying ~/.bashrc is not suitable for ephemeral Docker containers.
-# Removed: Modifying /etc/hosts is not suitable for Docker containers and often not needed if using IP for ROS_MASTER_URI.
-
 # Source ROS setup files for the current shell session within the container
-# These should already be sourced by the Dockerfile's .bashrc, but explicit sourcing
-# ensures they are available if the script is run in a non-interactive shell.
 source /opt/ros/noetic/setup.bash
 source /root/catkin_ws/devel/setup.bash # Assuming your ground station also needs workspace packages
 
-echo "Setup complete for Linux Ground Station."
+echo "Attempting to connect to ROS Master on Raspberry Pi..."
+# Run a ROS command to test connection. 'timeout' prevents hanging if master is unreachable.
+# 'rostopic list' is a good general test.
+if timeout 5 rostopic list > /dev/null 2>&1; then
+    echo "Successfully connected to ROS Master on Raspberry Pi!"
+    echo "Setup complete for Ground Station. You can now run ROS commands."
+else
+    echo "--------------------------------------------------------------------------------"
+    echo "ERROR: Failed to connect to ROS Master at $ROS_MASTER_URI."
+    echo "Please check the following:"
+    echo "1. Ensure the Raspberry Pi is powered on and connected to the network."
+    echo "2. Verify the Docker container on the Raspberry Pi is running and 'server.sh' has been executed."
+    echo "3. Check for any firewalls blocking port 11311 on either the Raspberry Pi or this Ground Station PC."
+    echo "4. Double-check the Raspberry Pi's IP address ($ONBOARD_IP) is correct."
+    echo "--------------------------------------------------------------------------------"
+    exit 1
+fi
