@@ -20,30 +20,21 @@ ROS_HOSTNAME="$ONBOARD_IP" # Pi's hostname or IP (usually same as ONBOARD_IP)
 echo "Automatically detected IP Address: $ONBOARD_IP"
 
 # Define ROS environment variables to point to itself (as ROS Master)
-ROS_MASTER_URI="http://$ONBOARD_IP:11311"
-
-# Add/Update ROS environment variables in .bashrc for persistence
-echo "Adding/Updating ROS environment variables in ~/.bashrc..."
-
-# Remove existing ROS_MASTER_URI and ROS_HOSTNAME lines to avoid duplicates
-sed -i '/^export ROS_MASTER_URI=/d' ~/.bashrc
-sed -i '/^export ROS_HOSTNAME=/d' ~/.bashrc
-
-# Add new lines
-echo "export ROS_MASTER_URI=\"$ROS_MASTER_URI\"" >> ~/.bashrc
-echo "export ROS_HOSTNAME=\"$ROS_HOSTNAME\"" >> ~/.bashrc
+export ROS_MASTER_URI="http://$ONBOARD_IP:11311" # Use export directly
+export ROS_IP="$ONBOARD_IP" # It's good practice for ROS_IP to be set for the master itself
+                               # if it's also running other nodes.
+                               # If only roscore, ROS_HOSTNAME is more critical.
 
 echo "ROS_MASTER_URI set to: $ROS_MASTER_URI"
 echo "ROS_HOSTNAME set to: $ROS_HOSTNAME"
-#echo "Configuration saved to ~/.bashrc. Please run 'source ~/.bashrc' or open a new terminal."
-
-# Removed: Modifying ~/.bashrc is not suitable for ephemeral Docker containers.
-# Removed: Modifying /etc/hosts is not suitable for Docker containers and often not needed if using IP for ROS_MASTER_URI.
+echo "ROS_IP set to: $ROS_IP"
 
 # Source ROS setup files for the current shell session within the container
-# These should already be sourced by the Dockerfile's .bashrc, but explicit sourcing
-# ensures they are available if the script is run in a non-interactive shell.
 source /opt/ros/noetic/setup.bash
 source /root/catkin_ws/devel/setup.bash # Assuming your ground station also needs workspace packages
 
 echo "Setup complete for Raspberry pi."
+
+# --- Start ROS Master ---
+echo "Starting ROS Master (roscore)..."
+exec roscore # 'exec' replaces the current shell with roscore, keeping it in the foreground
