@@ -1,4 +1,5 @@
 #!/bin/bash
+chmod +x shfiles/server.sh
 
 echo "--- Setting up ROS Network Configuration for Raspberry Pi (Onboard Computer) ---"
 
