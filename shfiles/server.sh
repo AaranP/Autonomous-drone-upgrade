@@ -36,5 +36,5 @@ source /root/catkin_ws/devel/setup.bash # Assuming your ground station also need
 echo "Setup complete for Raspberry pi."
 
 # --- Start ROS Master ---
-echo "Starting ROS Master (roscore)..."
-exec roscore # 'exec' replaces the current shell with roscore, keeping it in the foreground
+#echo "Starting ROS Master (roscore)..."
+#exec roscore # 'exec' replaces the current shell with roscore, keeping it in the foreground
