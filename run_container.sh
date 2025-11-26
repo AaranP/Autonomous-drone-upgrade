@@ -1,5 +1,7 @@
 docker run --privileged --rm tonistiigi/binfmt --install all
 
+chmod +x shfiles/server.sh
+
 # xhost +local:docker # This line is not needed for a headless server
 docker run -it --rm \
     --name fast_drone_container \
