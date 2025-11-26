@@ -1,5 +1,4 @@
 #!/bin/bash
-chmod +x shfiles/server.sh
 
 echo "--- Setting up ROS Network Configuration for Raspberry Pi (Onboard Computer) ---"
 
@@ -36,6 +35,7 @@ source /root/catkin_ws/devel/setup.bash # Assuming your ground station also need
 
 echo "Setup complete for Raspberry pi."
 
+exec /bin/bash
 # --- Start ROS Master ---
 #echo "Starting ROS Master (roscore)..."
 #exec roscore # 'exec' replaces the current shell with roscore, keeping it in the foreground
