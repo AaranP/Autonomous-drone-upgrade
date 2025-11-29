@@ -71,8 +71,14 @@ fi
 export ROS_MASTER_URI="http://${DRONE_RESOLVED_IP}:11311"
 echo "Set ROS_MASTER_URI to: ${ROS_MASTER_URI}"
 
+# --- Install Mesa OpenGL drivers for software rendering ---
+# These commands MUST be run BEFORE entering the interactive bash shell
+echo "Installing Mesa OpenGL drivers for software rendering..."
+apt-get update && apt-get install -y mesa-utils libgl1-mesa-glx libglu1-mesa
+echo "Mesa OpenGL drivers installation complete."
+
+
 # You might want to add other client-specific ROS commands here
 # For example, launching Rviz or PlotJuggler
 echo "Starting ROS client..."
-# Example: rviz
 /bin/bash # Keep the container alive with a bash shell
