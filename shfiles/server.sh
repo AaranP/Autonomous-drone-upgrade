@@ -18,13 +18,32 @@ export ROS_HOSTNAME="${DRONE_ROS_IP}" # Optional, but good practice
 echo "ROS_MASTER_URI set to: ${ROS_MASTER_URI}"
 echo "ROS_IP set to: ${ROS_IP}"
 
-echo "Attempting to connect to ROS Master..."
-timeout 5 bash -c "while ! rostopic list > /dev/null 2>&1; do echo 'Waiting for ROS Master...'; sleep 1; done"
-if [ $? -eq 0 ]; then
-    echo "ROS Master is running!"
+# Ensure ROS setup is sourced
+source /opt/ros/noetic/setup.bash
+source /root/catkin_ws/devel/setup.bash
+
+echo "ROS environment configured."
+
+# --- Start ROS Master automatically in the background ---
+if ! pgrep -x "roscore" > /dev/null; then
+    echo "Starting ROS Master (roscore) in the background..."
+    roscore & # Start rocore in the background
+    sleep 3 # Give roscore a moment to initialize
+    echo "ROS Master started."
 else
-    echo "WARNING: ROS Master did not respond within 5 seconds. It might start later, or there's an issue."
+    echo "ROS Master (roscore) is already running."
 fi
 
+# Attempt to connect to ROS Master locally to confirm it's running
+echo "Attempting to connect to ROS Master locally..."
+timeout 10 bash -c "while ! rostopic list > /dev/null 2>&1; do echo 'Waiting for ROS Master...'; sleep 1; done"
+if [ $? -eq 0 ]; then
+    echo "ROS Master is running and reachable locally!"
+else
+    echo "WARNING: ROS Master did not respond within 10 seconds locally. Check roscore process."
+fi
+
+echo ""
 # Keep the container alive with a bash session
+echo "Entering interactive bash shell. You can now run additional ROS commands."
 exec /bin/bash
