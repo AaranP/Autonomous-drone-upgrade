@@ -112,10 +112,11 @@ echo "Set ROS_IP to: ${ROS_IP}"
 # Assuming the Pi's Tailscale hostname is 'ledrone' as per your requirement.
 # This relies on Tailscale DNS resolving 'ledrone' to its Tailscale IP,
 # or local DNS resolving it to a direct IP if available.
+# Ensure 'ledrone' is configured as the Tailscale hostname for your Pi.
 DRONE_HOSTNAME="ledrone" 
 
 # Attempt to resolve the Drone's IP using the hostname.
-# This will pick up local LAN IP (if mDNS works) or Tailscale IP (if Tailscale DNS works).
+# This will prioritize Tailscale DNS if configured, then local DNS.
 DRONE_RESOLVED_IP=$(getent hosts "${DRONE_HOSTNAME}" | awk '{print $1}' | head -n 1)
 
 if [ -z "$DRONE_RESOLVED_IP" ]; then
@@ -128,6 +129,6 @@ echo "Set ROS_MASTER_URI to: ${ROS_MASTER_URI}"
 
 # You might want to add other client-specific ROS commands here
 # For example, launching Rviz or PlotJuggler
-#echo "Starting ROS client..."
+echo "Starting ROS client..."
 # Example: rviz
 /bin/bash # Keep the container alive with a bash shell

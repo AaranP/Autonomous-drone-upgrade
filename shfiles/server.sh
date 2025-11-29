@@ -38,20 +38,20 @@ echo "Setup complete for Raspberry pi."
 # --- ROS IP Configuration for the Drone (Server) ---
 DRONE_IP=""
 
-# Try to get the local network IP first
-DRONE_IP=$(hostname -I | awk '{print $1}' | head -n 1)
+# Try Tailscale IP first
+DRONE_IP=$(tailscale ip -4 2>/dev/null)
 
 if [ -z "$DRONE_IP" ]; then
-    echo "WARNING: Could not determine Drone's direct IP. Attempting to use Tailscale IP."
-    # As the container uses --network=host, `tailscale ip -4` will give the host's (Pi's) Tailscale IP
-    DRONE_IP=$(tailscale ip -4 2>/dev/null)
+    echo "WARNING: Could not determine Drone's Tailscale IP. Attempting to use direct device IP."
+    # Fallback to local network IP
+    DRONE_IP=$(hostname -I | awk '{print $1}' | head -n 1)
     if [ -z "$DRONE_IP" ]; then
-        echo "ERROR: Could not determine Drone's IP (direct or Tailscale). Please ensure Tailscale is running and logged in on the Pi."
+        echo "ERROR: Could not determine Drone's IP (Tailscale or direct). Please ensure Tailscale is running and logged in on the Pi, or check network connection."
         exit 1
     fi
-    echo "Using Drone Tailscale IP: ${DRONE_IP}"
-else
     echo "Using Drone direct IP: ${DRONE_IP}"
+else
+    echo "Using Drone Tailscale IP: ${DRONE_IP}"
 fi
 
 export ROS_IP="${DRONE_IP}"
@@ -61,10 +61,11 @@ echo "Set ROS_IP to: ${ROS_IP}"
 # Assuming the Mac's Tailscale hostname is 'mac-groundstation'.
 # This relies on Tailscale DNS resolving 'mac-groundstation' to its Tailscale IP,
 # or local DNS resolving it to a direct IP if available.
-GROUND_STATION_MASTER_HOSTNAME="aaranmac" # Change this if your Mac's Tailscale hostname is different
+# Ensure 'mac-groundstation' is configured as the Tailscale hostname for your Mac.
+GROUND_STATION_MASTER_HOSTNAME="mac-groundstation" # Change this if your Mac's Tailscale hostname is different
 
 # Attempt to resolve the Ground Station's IP using the hostname.
-# This will pick up local LAN IP (if mDNS works) or Tailscale IP (if Tailscale DNS works).
+# This will prioritize Tailscale DNS if configured, then local DNS.
 GROUND_STATION_RESOLVED_IP=$(getent hosts "${GROUND_STATION_MASTER_HOSTNAME}" | awk '{print $1}' | head -n 1)
 
 if [ -z "$GROUND_STATION_RESOLVED_IP" ]; then
@@ -77,9 +78,6 @@ echo "Set ROS_MASTER_URI to: ${ROS_MASTER_URI}"
 
 # You might want to add other server-specific ROS commands here
 # For example, launching your drone's ROS nodes
-#echo "Starting ROS server..."
+echo "Starting ROS server..."
 # Example: roslaunch fastdrone_bringup drone_system.launch
-exec /bin/bash
-# --- Start ROS Master ---
-#echo "Starting ROS Master (roscore)..."
-#exec roscore # 'exec' replaces the current shell with roscore, keeping it in the foreground
+/bin/bash # Keep the container alive with a bash shell

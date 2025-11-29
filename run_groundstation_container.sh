@@ -26,20 +26,20 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     # Set DISPLAY to use host.docker.internal for reliable connection to XQuartz on Docker Desktop.
     X_DISPLAY="host.docker.internal:0"
     
-    # Get the actual IP address of the host Mac for ROS communication.
-    # 'en0' is typical for primary Ethernet or Wi-Fi. Adjust if your active interface is different (e.g., en1, en2, Wi-Fi).
-    # Try direct IP first, then fallback to Tailscale IP.
-    GROUND_STATION_HOST_IP=$(ipconfig getifaddr en0 2>/dev/null)
+    # Try Tailscale IP first, then fallback to direct device IP.
+    GROUND_STATION_HOST_IP=$(tailscale ip -4 2>/dev/null)
     if [ -z "$GROUND_STATION_HOST_IP" ]; then
-        echo "WARNING: Could not determine Mac's direct IP from 'en0'. Attempting to use Tailscale IP."
-        GROUND_STATION_HOST_IP=$(tailscale ip -4 2>/dev/null)
+        echo "WARNING: Could not determine Mac's Tailscale IP. Attempting to use direct device IP (en0)."
+        # Fallback to direct IP
+        # 'en0' is typical for primary Ethernet or Wi-Fi. Adjust if your active interface is different (e.g., en1, en2, Wi-Fi).
+        GROUND_STATION_HOST_IP=$(ipconfig getifaddr en0 2>/dev/null)
         if [ -z "$GROUND_STATION_HOST_IP" ]; then
-            echo "ERROR: Could not determine Mac's IP (direct or Tailscale). Please ensure Tailscale is running and logged in, or check network connection for 'en0'."
+            echo "ERROR: Could not determine Mac's IP (Tailscale or direct en0). Please ensure Tailscale is running and logged in, or check network connection for 'en0'."
             exit 1
         fi
-        echo "Using Mac Tailscale IP: ${GROUND_STATION_HOST_IP}"
-    else
         echo "Using Mac direct IP: ${GROUND_STATION_HOST_IP}"
+    else
+        echo "Using Mac Tailscale IP: ${GROUND_STATION_HOST_IP}"
     fi
 
 # Windows Host (via WSL2 and Docker Desktop)
@@ -49,17 +49,20 @@ elif [[ -f /proc/version && "$(grep -i microsoft /proc/version)" != "" ]]; then
     # Ensure VcXsrv or Xming is installed and running on Windows with "Disable access control" checked.
     # Get the IP address of the WSL2 host (which is the Windows machine's IP from WSL's perspective).
     X_DISPLAY="$(ip route show default | awk '/default via/ {print $3}'):0"
-    GROUND_STATION_HOST_IP="$(ip route show default | awk '/default via/ {print $3}')" # Use the WSL host IP for ROS
+    
+    # Try Tailscale IP first, then fallback to direct WSL host IP.
+    GROUND_STATION_HOST_IP=$(tailscale ip -4 2>/dev/null)
     if [ -z "$GROUND_STATION_HOST_IP" ]; then
-        echo "WARNING: Could not determine WSL host direct IP. Attempting to use Tailscale IP."
-        GROUND_STATION_HOST_IP=$(tailscale ip -4 2>/dev/null)
+        echo "WARNING: Could not determine WSL host Tailscale IP. Attempting to use direct WSL host IP."
+        # Fallback to direct WSL host IP
+        GROUND_STATION_HOST_IP="$(ip route show default | awk '/default via/ {print $3}')" # Use the WSL host IP for ROS
         if [ -z "$GROUND_STATION_HOST_IP" ]; then
-            echo "ERROR: Could not determine WSL host IP (direct or Tailscale). Please ensure Docker Desktop and WSL2 are running correctly and Tailscale is running and logged in."
+            echo "ERROR: Could not determine WSL host IP (Tailscale or direct). Please ensure Docker Desktop and WSL2 are running correctly and Tailscale is running and logged in."
             exit 1
         fi
-        echo "Using Windows (WSL) Tailscale IP: ${GROUND_STATION_HOST_IP}"
-    else
         echo "Using Windows (WSL) direct IP: ${GROUND_STATION_HOST_IP}"
+    else
+        echo "Using Windows (WSL) Tailscale IP: ${GROUND_STATION_HOST_IP}"
     fi
 
 # Native Linux Host (non-WSL)
@@ -69,22 +72,24 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     # It must be run on the host *before* the container starts (this script does it).
     xhost +local:docker
     X_DISPLAY=":0"
-    # Get the primary IP address of the Linux host for ROS communication.
-    GROUND_STATION_HOST_IP=$(hostname -I | awk '{print $1}' | head -n 1) # Use head -n 1 to get only the first IP
+    
+    # Try Tailscale IP first, then fallback to direct device IP.
+    GROUND_STATION_HOST_IP=$(tailscale ip -4 2>/dev/null)
     if [ -z "$GROUND_STATION_HOST_IP" ]; then
-        # Fallback if hostname -I doesn't work as expected for some reason.
-        GROUND_STATION_HOST_IP=$(ip route get 1.1.1.1 | awk '{print $7; exit}')
-    fi
-    if [ -z "$GROUND_STATION_HOST_IP" ]; then
-        echo "WARNING: Could not determine Linux host direct IP. Attempting to use Tailscale IP."
-        GROUND_STATION_HOST_IP=$(tailscale ip -4 2>/dev/null)
+        echo "WARNING: Could not determine Linux host Tailscale IP. Attempting to use direct device IP."
+        # Fallback to direct IP
+        GROUND_STATION_HOST_IP=$(hostname -I | awk '{print $1}' | head -n 1) # Use head -n 1 to get only the first IP
         if [ -z "$GROUND_STATION_HOST_IP" ]; then
-            echo "ERROR: Could not determine Linux host IP (direct or Tailscale). Please check network connection and ensure Tailscale is running and logged in."
+            # Fallback if hostname -I doesn't work as expected for some reason.
+            GROUND_STATION_HOST_IP=$(ip route get 1.1.1.1 | awk '{print $7; exit}')
+        fi
+        if [ -z "$GROUND_STATION_HOST_IP" ]; then
+            echo "ERROR: Could not determine Linux host IP (Tailscale or direct). Please check network connection and ensure Tailscale is running and logged in."
             exit 1
         fi
-        echo "Using Linux Tailscale IP: ${GROUND_STATION_HOST_IP}"
-    else
         echo "Using Linux direct IP: ${GROUND_STATION_HOST_IP}"
+    else
+        echo "Using Linux Tailscale IP: ${GROUND_STATION_HOST_IP}"
     fi
 
 else
