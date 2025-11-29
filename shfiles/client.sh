@@ -97,3 +97,37 @@ else
     echo "--------------------------------------------------------------------------------"
     exit 1
 fi
+
+# --- ROS IP Configuration for the Ground Station (Client) ---
+# GROUND_STATION_HOST_IP is passed from run_groundstation_container.sh script
+if [ -z "$GROUND_STATION_HOST_IP" ]; then
+    echo "ERROR: GROUND_STATION_HOST_IP environment variable is not set. Cannot configure ROS_IP."
+    exit 1
+fi
+
+export ROS_IP="${GROUND_STATION_HOST_IP}"
+echo "Set ROS_IP to: ${ROS_IP}"
+
+# --- ROS_MASTER_URI Configuration (Points to Drone) ---
+# Assuming the Pi's Tailscale hostname is 'ledrone' as per your requirement.
+# This relies on Tailscale DNS resolving 'ledrone' to its Tailscale IP,
+# or local DNS resolving it to a direct IP if available.
+DRONE_HOSTNAME="ledrone" 
+
+# Attempt to resolve the Drone's IP using the hostname.
+# This will pick up local LAN IP (if mDNS works) or Tailscale IP (if Tailscale DNS works).
+DRONE_RESOLVED_IP=$(getent hosts "${DRONE_HOSTNAME}" | awk '{print $1}' | head -n 1)
+
+if [ -z "$DRONE_RESOLVED_IP" ]; then
+    echo "ERROR: Could not resolve IP for drone hostname '${DRONE_HOSTNAME}'. Please ensure drone is online and Tailscale/local DNS is working."
+    exit 1
+fi
+
+export ROS_MASTER_URI="http://${DRONE_RESOLVED_IP}:11311"
+echo "Set ROS_MASTER_URI to: ${ROS_MASTER_URI}"
+
+# You might want to add other client-specific ROS commands here
+# For example, launching Rviz or PlotJuggler
+#echo "Starting ROS client..."
+# Example: rviz
+/bin/bash # Keep the container alive with a bash shell

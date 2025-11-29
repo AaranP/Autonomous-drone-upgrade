@@ -6,78 +6,109 @@
 
 # --- Configuration ---
 IMAGE_NAME="fastdrone_groundstation"
-IMAGE_TAG="latest" # Uncommented this line
+#IMAGE_TAG="latest"
 CONTAINER_NAME="fastdrone_groundstation_container"
-
-# --- IMPORTANT: Set these variables ---
-# Replace with the actual IP address of your Raspberry Pi (onboard computer)
-# You can find this by running 'hostname -I | awk '{print $1}'' on the Pi.
-# ONBOARD_PI_IP="<YOUR_RASPBERRY_PI_IP>" # No longer used for ROS config in container
-
-# Automatically detect the IP address of the ground station PC
-# This is used for ROS_IP, so the Pi knows how to send data back to this PC.
-# GROUND_STATION_IP=$(hostname -I | awk '{print $1}') # No longer used for ROS config in container
 
 # --- X11 Forwarding Setup (for GUI applications like Rviz, PlotJuggler) ---
 # This part is platform-dependent. Choose the appropriate section below.
 
 # Default DISPLAY variable (will be overridden by platform-specific logic)
 X_DISPLAY=""
+# Default GROUND_STATION_HOST_IP (will be overridden by platform-specific logic)
+GROUND_STATION_HOST_IP=""
 
-# --- Linux Host (non-WSL) ---
-# Check if not running in WSL
-if [[ "$OSTYPE" == "linux-gnu"* && ! -f /proc/version || "$(grep -i microsoft /proc/version)" == "" ]]; then
-    echo "Detected native Linux host."
-    xhost +local:docker # Allow Docker to connect to your X server
-    X_DISPLAY=":0"
-fi
+# --- Detect OS and set variables ---
 
-# --- macOS Host (M1 Mac or Intel Mac) ---
+# macOS Host (M1 Mac or Intel Mac)
 if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "Detected macOS host."
-    # Ensure XQuartz is installed and running.
-    # Open XQuartz, then in its terminal, run 'xhost +'
-    # Get the IP address of the host for DISPLAY
-    X_DISPLAY="$(ipconfig getifaddr en0):0" # Adjust 'en0' if your primary network interface is different
-    # You might need to run 'xhost + <container_ip>' from XQuartz terminal
-    # or simply 'xhost +' for broader access.
-fi
+    # Ensure XQuartz is installed and running, and 'xhost +' has been run in an XQuartz terminal.
+    # Set DISPLAY to use host.docker.internal for reliable connection to XQuartz on Docker Desktop.
+    X_DISPLAY="host.docker.internal:0"
+    
+    # Get the actual IP address of the host Mac for ROS communication.
+    # 'en0' is typical for primary Ethernet or Wi-Fi. Adjust if your active interface is different (e.g., en1, en2, Wi-Fi).
+    # Try direct IP first, then fallback to Tailscale IP.
+    GROUND_STATION_HOST_IP=$(ipconfig getifaddr en0 2>/dev/null)
+    if [ -z "$GROUND_STATION_HOST_IP" ]; then
+        echo "WARNING: Could not determine Mac's direct IP from 'en0'. Attempting to use Tailscale IP."
+        GROUND_STATION_HOST_IP=$(tailscale ip -4 2>/dev/null)
+        if [ -z "$GROUND_STATION_HOST_IP" ]; then
+            echo "ERROR: Could not determine Mac's IP (direct or Tailscale). Please ensure Tailscale is running and logged in, or check network connection for 'en0'."
+            exit 1
+        fi
+        echo "Using Mac Tailscale IP: ${GROUND_STATION_HOST_IP}"
+    else
+        echo "Using Mac direct IP: ${GROUND_STATION_HOST_IP}"
+    fi
 
-# --- Windows Host (via WSL2 and Docker Desktop) ---
-# Check for WSL2 environment
-if [[ -f /proc/version && "$(grep -i microsoft /proc/version)" != "" ]]; then
+# Windows Host (via WSL2 and Docker Desktop)
+# Check for WSL2 environment by looking for /proc/version containing 'microsoft'
+elif [[ -f /proc/version && "$(grep -i microsoft /proc/version)" != "" ]]; then
     echo "Detected Windows host (running via WSL2)."
-    # Ensure VcXsrv or Xming is installed and running on Windows.
-    # VcXsrv: Launch with "Disable access control" checked.
-    # Get the IP address of the WSL2 host (Windows machine)
-    # This typically works for WSL2 to connect to VcXsrv running on Windows.
-    X_DISPLAY="$(ip route show default | awk '/default via/ {print $3}'):0" # More robust way to get Windows host IP from WSL2
+    # Ensure VcXsrv or Xming is installed and running on Windows with "Disable access control" checked.
+    # Get the IP address of the WSL2 host (which is the Windows machine's IP from WSL's perspective).
+    X_DISPLAY="$(ip route show default | awk '/default via/ {print $3}'):0"
+    GROUND_STATION_HOST_IP="$(ip route show default | awk '/default via/ {print $3}')" # Use the WSL host IP for ROS
+    if [ -z "$GROUND_STATION_HOST_IP" ]; then
+        echo "WARNING: Could not determine WSL host direct IP. Attempting to use Tailscale IP."
+        GROUND_STATION_HOST_IP=$(tailscale ip -4 2>/dev/null)
+        if [ -z "$GROUND_STATION_HOST_IP" ]; then
+            echo "ERROR: Could not determine WSL host IP (direct or Tailscale). Please ensure Docker Desktop and WSL2 are running correctly and Tailscale is running and logged in."
+            exit 1
+        fi
+        echo "Using Windows (WSL) Tailscale IP: ${GROUND_STATION_HOST_IP}"
+    else
+        echo "Using Windows (WSL) direct IP: ${GROUND_STATION_HOST_IP}"
+    fi
+
+# Native Linux Host (non-WSL)
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    echo "Detected native Linux host."
+    # This command allows Docker to connect to your X server.
+    # It must be run on the host *before* the container starts (this script does it).
+    xhost +local:docker
+    X_DISPLAY=":0"
+    # Get the primary IP address of the Linux host for ROS communication.
+    GROUND_STATION_HOST_IP=$(hostname -I | awk '{print $1}' | head -n 1) # Use head -n 1 to get only the first IP
+    if [ -z "$GROUND_STATION_HOST_IP" ]; then
+        # Fallback if hostname -I doesn't work as expected for some reason.
+        GROUND_STATION_HOST_IP=$(ip route get 1.1.1.1 | awk '{print $7; exit}')
+    fi
+    if [ -z "$GROUND_STATION_HOST_IP" ]; then
+        echo "WARNING: Could not determine Linux host direct IP. Attempting to use Tailscale IP."
+        GROUND_STATION_HOST_IP=$(tailscale ip -4 2>/dev/null)
+        if [ -z "$GROUND_STATION_HOST_IP" ]; then
+            echo "ERROR: Could not determine Linux host IP (direct or Tailscale). Please check network connection and ensure Tailscale is running and logged in."
+            exit 1
+        fi
+        echo "Using Linux Tailscale IP: ${GROUND_STATION_HOST_IP}"
+    else
+        echo "Using Linux direct IP: ${GROUND_STATION_HOST_IP}"
+    fi
+
+else
+    # Fallback for unknown OS or if detection fails
+    echo "WARNING: Could not determine OS type. GUI applications and ROS communication may not work."
+    echo "Please manually set X_DISPLAY and GROUND_STATION_HOST_IP before running this script if needed."
 fi
 
+# Final checks after OS detection
 if [ -z "$X_DISPLAY" ]; then
-    echo "WARNING: Could not determine X_DISPLAY for your OS type. GUI applications may not work."
-    echo "Please manually set X_DISPLAY before running this script if you need GUI."
+    echo "WARNING: X_DISPLAY is not set. GUI applications may not work."
 fi
 
-# Extract just the IP part from X_DISPLAY for X11 forwarding.
-# For WSL2, this is the WSL internal gateway (e.g., 172.25.0.1).
-# This IP is suitable for X11 forwarding to VcXsrv running on Windows.
-WSL_INTERNAL_HOST_IP=""
-if [[ -n "$X_DISPLAY" ]]; then
-    WSL_INTERNAL_HOST_IP=$(echo "$X_DISPLAY" | cut -d':' -f1)
-    echo "Detected WSL Internal Host IP for X11: $WSL_INTERNAL_HOST_IP"
+if [ -z "$GROUND_STATION_HOST_IP" ]; then
+    echo "ERROR: GROUND_STATION_HOST_IP is not set. ROS communication will likely fail."
+    exit 1
 fi
 
-# --- IMPORTANT: Set your Physical Windows PC's IP for ROS_IP ---
-# Replace <YOUR_PHYSICAL_WINDOWS_PC_IP> with the IPv4 Address you found in step 1 (e.g., 192.168.5.100).
-# This is the IP that your Raspberry Pi will use to send ROS messages back to this ground station.
-GROUND_STATION_HOST_IP="192.168.5.99" # <-- **SET THIS TO YOUR ACTUAL PHYSICAL WINDOWS IP**
-echo "Using Physical Windows Host IP for ROS_IP: $GROUND_STATION_HOST_IP"
+echo "Using X_DISPLAY: ${X_DISPLAY}"
+echo "Using GROUND_STATION_HOST_IP for ROS_IP: ${GROUND_STATION_HOST_IP}"
 
 # --- Run the Docker Container ---
 echo "Starting Docker Ground Station Container..."
-# echo "Connecting to ROS Master at: http://${ONBOARD_PI_IP}:11311" # Handled by client.sh
-# echo "Ground Station ROS_IP set to: ${GROUND_STATION_IP}" # Handled by client.sh
+# The ROS_MASTER_URI and ROS_IP are now set within client.sh, using GROUND_STATION_HOST_IP passed as env var.
 
 docker run -it --rm \
     --name "${CONTAINER_NAME}" \
