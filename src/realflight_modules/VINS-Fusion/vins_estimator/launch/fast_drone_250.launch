@@ -1,6 +1,12 @@
 <launch>
-	<node name="vins_fusion" pkg="vins"  type="vins_node" output="screen" args="$(find vins)/../config/fast_drone_250.yaml"/>
+    <!-- Group to load parameters into the 'vins_fusion' namespace -->
+    <group ns="vins_fusion">
+        <rosparam command="load" file="$(find vins)/../config/fast_drone_250.yaml" />
+    </group>
 
-	<!-- <node name="loop_fusion" pkg="loop_fusion"  type="loop_fusion_node" args="$(find vins)/../config/fast_drone_250.yaml" output="screen"/> -->
+    <!-- The node will now find the parameters in its private namespace -->
+    <node name="vins_fusion" pkg="vins"  type="vins_node" output="screen"/>
 
-</launch> 
+    <!-- <node name="loop_fusion" pkg="loop_fusion"  type="loop_fusion_node" args="$(find vins)/../config/fast_drone_250.yaml" output="screen"/> -->
+
+</launch>
