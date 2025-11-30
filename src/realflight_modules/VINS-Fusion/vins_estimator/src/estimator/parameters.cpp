@@ -108,7 +108,7 @@ void readParameters(std::string config_file)
     MIN_PARALLAX = MIN_PARALLAX / FOCAL_LENGTH;
 
     fsSettings["output_path"] >> VINS_RESULT_PATH;
-    VINS_RESULT_PATH = OUTPUT_FOLDER + "/stamped_traj_estimate.txt";
+    VINS_RESULT_PATH = VINS_RESULT_PATH + "/stamped_traj_estimate.txt";
 
     std::cout << "result path " << VINS_RESULT_PATH << std::endl;
     std::ofstream foutC(VINS_RESULT_PATH, std::ios::out);
