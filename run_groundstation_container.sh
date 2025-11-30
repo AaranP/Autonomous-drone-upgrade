@@ -3,6 +3,8 @@
 
 
 #!/bin/bash
+chmod +x "$0"  # Ensure script is executable (safe to run multiple times)
+
 # The 'chmod +x run_groundstation_container.sh' should be run once from your terminal, not inside the script itself.
 # Removed: chmod +x run_groundstation_container.sh
 
@@ -29,7 +31,7 @@ is_valid_ip() {
     local ip=$1
     # Regex to match IPv4 addresses (simplified for common local/Tailscale IPs)
     # Allows 192.168.x.x, 10.x.x.x, 172.16-31.x.x, 100.x.x.x, and the 206.87.212/216.x range
-    if [[ "$ip" =~ ^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)([0-9]{1,3}\.){1}[0-9]{1,3}$ ]] || \
+if [[ "$ip" =~ ^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)([0-9]{1,3}\.){1}[0-9]{1,3}$ ]] || \
        [[ "$ip" =~ ^100\.([0-9]{1,3}\.){2}[0-9]{1,3}$ ]] || \
        [[ "$ip" =~ ^206\.87\.21[26]\.[0-9]{1,3}$ ]]; then
         return 0 # Valid IP
@@ -118,6 +120,12 @@ else
     CURRENT_OS_TYPE="unknown"
     echo "WARNING: Could not determine OS type. GUI applications and ROS communication may not work."
     echo "Please manually set X_DISPLAY and GROUND_STATION_HOST_IP before running this script if needed."
+fi
+
+# --- X11 Docker Volume (Unix socket only for native Linux) ---
+X11_VOLUME=""
+if [ "$CURRENT_OS_TYPE" == "linux" ]; then
+    X11_VOLUME="-v /tmp/.X11-unix:/tmp/.X11-unix"
 fi
 
 # Final checks after OS detection
@@ -280,8 +288,7 @@ docker run -it --rm \
     -e DISPLAY="${X_DISPLAY}" \
     -e GROUND_STATION_HOST_IP="${FINAL_GROUND_STATION_IP}" \
     -e RASPBERRY_PI_TARGET_IP="${FINAL_RASPBERRY_PI_IP}" \
-    -e LIBGL_ALWAYS_SOFTWARE=1 \
-    -v /tmp/.X11-unix:/tmp/.X11-unix \
+    ${X11_VOLUME} \
     -v "$(pwd)/shfiles:/root/shfiles" \
     --add-host "${DRONE_HOSTNAME}:${FINAL_RASPBERRY_PI_IP}" \
     "${IMAGE_NAME}:${IMAGE_TAG}" \
