@@ -22,7 +22,7 @@ namespace ego_planner
     nh.param("fsm/realworld_experiment", flag_realworld_experiment_, false);
     nh.param("fsm/fail_safe", enable_fail_safe_, true);
 
-    have_trigger_ = !flag_realworld_experiment_;
+    have_trigger_ = !flag_realworld_experiment_ || (target_type_ == TARGET_TYPE::MANUAL_TARGET);
 
     nh.param("fsm/waypoint_num", waypoint_num_, -1);
     for (int i = 0; i < waypoint_num_; i++)
