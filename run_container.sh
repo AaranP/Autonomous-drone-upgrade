@@ -106,6 +106,7 @@ docker run -it --rm \
     -v "$(pwd)/src/realflight_modules/VINS-Fusion/vins_estimator/launch:/root/catkin_ws/src/VINS-Fusion/vins_estimator/launch" \
     -v "$(pwd)/src/planner/plan_manage/launch:/root/catkin_ws/src/planner/plan_manage/launch" \
     -v "$(pwd)/shfiles:/root/shfiles" \
+    -v "$(pwd)/vins_output:/root/vins_output" \
     fast_drone_noetic \
     /root/shfiles/server.sh # Execute the server setup script
     
