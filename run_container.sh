@@ -102,8 +102,8 @@ docker run -it --rm \
     -e DRONE_ROS_IP="${DRONE_ROS_IP}" \
     -v /dev:/dev \
     -v "$(pwd)/src/fastdrone/config:/root/catkin_ws/src/fastdrone/config" \
+    -v "$(pwd)/src/realflight_modules/VINS-Fusion/config:/root/catkin_ws/src/VINS-Fusion/config" \
     -v "$(pwd)/shfiles:/root/shfiles" \
-    -v "$(pwd)/vins_output:/root/vins_output" \
     fast_drone_noetic \
     /root/shfiles/server.sh # Execute the server setup script
     
