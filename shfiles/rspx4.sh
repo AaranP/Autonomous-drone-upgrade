@@ -11,8 +11,9 @@ roslaunch realsense2_camera rs_camera.launch &
 sleep 20; # Give camera time to start publishing
 
 echo "--- Starting VINS-Fusion ---"
-mkdir -p /root/vins_output # Ensure the output directory exists
-chmod 777 /root/vins_output
+mkdir -p /root/vins_output/pose_graph # Ensure the output directories exist
+chmod -R 777 /root/vins_output
+
 roslaunch vins fast_drone_250.launch &
 sleep 20; # Give VINS time to start processing
 
