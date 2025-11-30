@@ -104,7 +104,6 @@ docker run -it --rm \
     -v "$(pwd)/src/fastdrone/config:/root/catkin_ws/src/fastdrone/config" \
     -v "$(pwd)/shfiles:/root/shfiles" \
     -v "$(pwd)/vins_output:/root/vins_output" \ # Add this line
-
     fast_drone_noetic \
     /root/shfiles/server.sh # Execute the server setup script
     
