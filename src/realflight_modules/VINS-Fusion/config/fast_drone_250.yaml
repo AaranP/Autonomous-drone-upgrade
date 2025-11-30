@@ -13,7 +13,7 @@ image1_topic: "/camera/infra2/image_rect_raw"
 
 
 
-output_path: "/root/vins_output"
+output_path: "/root/vins_output/"
 
 
 cam0_calib: "left.yaml"
