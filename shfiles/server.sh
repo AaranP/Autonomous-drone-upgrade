@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Create the VINS-Fusion output directory if it doesn't exist
+mkdir -p /root/vins_output
+
 echo "--- Setting up ROS Network Configuration for Drone ---"
 
 # Get Drone ROS IP from environment variable passed by run_container.sh
