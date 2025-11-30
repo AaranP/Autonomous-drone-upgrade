@@ -8,7 +8,7 @@ sleep 20; # Give MAVROS time to initialize and connect to FCU
 
 echo "--- Starting RealSense Camera ---"
 # Lower the framerate to reduce power and bandwidth demand
-roslaunch realsense2_camera rs_camera.launch infra_rgb:=true depth_width:=640 depth_height:=480 depth_fps:=15 infra_width:=640 infra_height:=480 infra_fps:=15 &
+roslaunch realsense2_camera rs_camera.launch depth_width:=640 depth_height:=480 depth_fps:=15 infra_width:=640 infra_height:=480 infra_fps:=15 &
 sleep 20; # Give camera time to start publishing
 
 echo "--- Starting VINS-Fusion ---"
