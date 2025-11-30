@@ -107,7 +107,7 @@ void readParameters(std::string config_file)
     MIN_PARALLAX = fsSettings["keyframe_parallax"];
     MIN_PARALLAX = MIN_PARALLAX / FOCAL_LENGTH;
 
-    fsSettings["output_path"] >> OUTPUT_FOLDER;
+    fsSettings["output_path"] >> VINS_RESULT_PATH;
     VINS_RESULT_PATH = OUTPUT_FOLDER + "/stamped_traj_estimate.txt";
 
     std::cout << "result path " << VINS_RESULT_PATH << std::endl;
