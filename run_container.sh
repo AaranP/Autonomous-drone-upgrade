@@ -1,6 +1,6 @@
 #!/bin/bash
 
-docker run --privileged --rm tonistiigi/binfmt --install all
+#docker run --privileged --rm tonistiigi/binfmt --install all
 
 chmod +x shfiles/server.sh
 
