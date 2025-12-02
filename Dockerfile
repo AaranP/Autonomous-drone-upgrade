@@ -26,8 +26,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     net-tools \
     openssh-server \
     ros-noetic-ddynamic-reconfigure \
-    ros-noetic-plotjuggler \
-    ros-noetic-plotjuggler-ros \
     ros-noetic-mavros \
     && rm -rf /var/lib/apt/lists/*
 
@@ -51,8 +49,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install GeographicLib datasets for MAVROS
 RUN /opt/ros/noetic/lib/mavros/install_geographiclib_datasets.sh
 
-# Clone Ego-Planner (fastdrone)
-COPY . /root/catkin_ws/src/fastdrone/
+# --- CORRECTED ---
+# Copy only the 'src' directory from your project into the workspace 'src' folder
+COPY src/ /root/catkin_ws/src/
 
 # Build the entire catkin workspace
 WORKDIR /root/catkin_ws
