@@ -124,29 +124,8 @@ fi
 
 # --- X11 Docker Volume (Unix socket only for native Linux) ---
 X11_VOLUME=""
-XAUTHORITY_VOLUME="" # Initialize for all OS types
-
 if [ "$CURRENT_OS_TYPE" == "linux" ]; then
-    echo "Configuring X11 forwarding for native Linux host..."
-    # Ensure X server allows connection from local Docker processes
-    xhost +local:docker # Allow Docker to connect to your X server
-    
     X11_VOLUME="-v /tmp/.X11-unix:/tmp/.X11-unix"
-    
-    # --- XAUTHORITY SETUP FOR LINUX ---
-    # Create a temporary Xauthority file for the container if xauth is available
-    if command -v xauth &> /dev/null; then
-        XAUTH_HOST_PATH="${HOME}/.docker.xauth" # Use HOME for write permissions
-        touch "${XAUTH_HOST_PATH}" # Ensure it exists
-        # Merge the host's current display authorization into the temporary file
-        xauth nlist "$DISPLAY" | sed -e 's/^..../ffff/' | xauth -f "${XAUTH_HOST_PATH}" nmerge -
-        XAUTHORITY_VOLUME="-v ${XAUTH_HOST_PATH}:${XAUTH_HOST_PATH} -e XAUTHORITY=${XAUTH_HOST_PATH}"
-        echo "XAUTHORITY file '${XAUTH_HOST_PATH}' created and mounted."
-    else
-        echo "WARNING: 'xauth' command not found on your Linux host. Xauthority forwarding cannot be used, which might lead to display issues."
-        echo "Please install 'xauth' (e.g., 'sudo apt install x11-xserver-utils' on Ubuntu) if problems persist."
-    fi
-    # --- END XAUTHORITY SETUP ---
 fi
 
 # Final checks after OS detection
@@ -310,7 +289,6 @@ docker run -it --rm \
     -e GROUND_STATION_HOST_IP="${FINAL_GROUND_STATION_IP}" \
     -e RASPBERRY_PI_TARGET_IP="${FINAL_RASPBERRY_PI_IP}" \
     ${X11_VOLUME} \
-    ${XAUTHORITY_VOLUME} \  # Add this line to pass XAUTHORITY
     -v "$(pwd)/shfiles:/root/shfiles" \
     --add-host "${DRONE_HOSTNAME}:${FINAL_RASPBERRY_PI_IP}" \
     "${IMAGE_NAME}:${IMAGE_TAG}" \
