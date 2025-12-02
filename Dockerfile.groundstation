@@ -50,6 +50,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     librealsense2-dev \
     librealsense2-dbg \
     ros-noetic-realsense2-camera \
+    libxcb-xinerama0 \
+    libxcb-icccm4 \
+    libxcb-image0 \
+    libxcb-keysyms1 \
+    libxcb-randr0 \
+    libxcb-render-util0 \
+    libxcb-shape0 \
+    libxcb-sync1 \
+    libxcb-util0 \
+    libxcb-xfixes0 \
+    libxcb-xkb1 \
+    libxkbcommon-x11-0 \
+    # If the problem persists, you might need 'qt5-default' or 'qtbase5-dev'
+    # if the core Qt runtime libraries are not fully present.
     && rm -rf /var/lib/apt/lists/*
 # --- End Realsense SDK installation ---
 
