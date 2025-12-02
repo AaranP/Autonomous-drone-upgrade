@@ -18,16 +18,33 @@ fi
 xhost +local:docker
 echo "Enabled X11 forwarding for local docker containers."
 
-# --- Get Server IP from user ---
-read -p "Please enter the IP address of the server (Raspberry Pi): " SERVER_IP
-
-# Validate IP format (simple check)
-if [[ ! $SERVER_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "Invalid IP address format. Exiting."
-  exit 1
-fi
+# --- Get Server IP and connection type from user ---
+while true; do
+    read -p "Please enter the IP address of the server (Raspberry Pi): " SERVER_IP
+    if [[ ! $SERVER_IP =~ ^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then
+        echo "Invalid IP address format. Please try again."
+    else
+        break
+    fi
+done
 
 echo "Server IP set to: $SERVER_IP"
+
+ROS_CONNECTION_TYPE=""
+while true; do
+    read -p "How do you want to connect to the ROS Master on the Raspberry Pi? (1 for direct IP / 2 for tailscale): " CONNECTION_CHOICE
+    if [[ "$CONNECTION_CHOICE" == "1" ]]; then
+        ROS_CONNECTION_TYPE="direct"
+        echo "Connection type set to: Direct IP (will use provided IP $SERVER_IP for ROS_MASTER_URI)"
+        break
+    elif [[ "$CONNECTION_CHOICE" == "2" ]]; then
+        ROS_CONNECTION_TYPE="tailscale"
+        echo "Connection type set to: Tailscale (will use 'ledrone' hostname for ROS_MASTER_URI, relying on Tailscale DNS)"
+        break
+    else
+        echo "Invalid choice. Please enter '1' for direct IP or '2' for tailscale."
+    fi
+done
 
 # --- Get Ground Station IP (Host IP) ---
 # Using --network=host, the container shares the host's network.
@@ -44,6 +61,7 @@ echo "Ground Station IP (this machine) set to: $GROUNDSTATION_IP"
 echo "Starting Docker container: $CONTAINER_NAME"
 echo "Passing GROUND_STATION_HOST_IP=$GROUNDSTATION_IP to the container."
 echo "Passing RASPBERRY_PI_TARGET_IP=$SERVER_IP to the container."
+echo "Passing ROS_CONNECTION_TYPE=$ROS_CONNECTION_TYPE to the container."
 echo "The container will execute shfiles/client.sh to set up the ROS environment."
 
 docker run -it --rm \
@@ -54,6 +72,7 @@ docker run -it --rm \
     -e QT_X11_NO_MITSHM=1 \
     -e GROUND_STATION_HOST_IP=$GROUNDSTATION_IP \
     -e RASPBERRY_PI_TARGET_IP=$SERVER_IP \
+    -e ROS_CONNECTION_TYPE=$ROS_CONNECTION_TYPE \
     $IMAGE_NAME:$IMAGE_TAG \
     /bin/bash /root/catkin_ws/src/fastdrone/shfiles/client.sh
 
