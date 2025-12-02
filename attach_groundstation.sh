@@ -3,7 +3,7 @@
 chmod +x attach_groundstation.sh
 #!/bin/bash
 
-CONTAINER_NAME="fastdrone_groundstation_container"
+CONTAINER_NAME="fastdrone_groundstation_container:latest"
 
 echo "Attaching to container: $CONTAINER_NAME and setting up ROS environment..."
 
