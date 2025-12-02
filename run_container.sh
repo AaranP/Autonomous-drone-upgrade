@@ -46,41 +46,54 @@ echo ""
 if [ -z "$PI_DIRECT_IP" ] && [ -z "$PI_TAILSCALE_IP" ]; then
     echo "ERROR: No usable IP addresses detected for Raspberry Pi. Exiting."
     exit 1
+// ...existing code...
+    exit 1
 fi
 
 while true; do
     echo "Choose connection method for the Drone's ROS Master:"
-    
-    options=()
+
+    # Store which options are valid to make logic simpler
+    direct_valid=false
+    tailscale_valid=false
+    prompt_options=""
+
     if [ -n "$PI_DIRECT_IP" ]; then
-        options+=("1. Direct (Non-Tailscale) IP")
+        echo "1. Direct (Non-Tailscale) IP"
+        direct_valid=true
+        prompt_options="Direct"
     fi
     if [ -n "$PI_TAILSCALE_IP" ]; then
-        options+=("2. Tailscale VPN IP")
+        echo "2. Tailscale VPN IP"
+        tailscale_valid=true
+        if [ -n "$prompt_options" ]; then
+            prompt_options+=", Tailscale"
+        else
+            prompt_options="Tailscale"
+        fi
     fi
 
-    for opt in "${options[@]}"; do
-        echo "$opt"
-    done
-
     default_choice="1"
-    if [ -z "$PI_DIRECT_IP" ] && [ -n "$PI_TAILSCALE_IP" ]; then # If direct not available, default to tailscale
+    if ! $direct_valid && $tailscale_valid; then # If direct is not available, default to tailscale
         default_choice="2"
     fi
     
-    read -p "Enter choice ($(echo "${options[@]}" | sed 's/^[0-9]\. /' | sed 's/[0-9]\. /, /g'), default $default_choice): " choice
-    choice=${choice:-$default_choice} # Default to 1 if no input
+    read -p "Enter choice (${prompt_options}, default $default_choice): " choice
+    choice=${choice:-$default_choice} # Default to choice if no input
 
-    if [ "$choice" == "1" ] && [ -n "$PI_DIRECT_IP" ]; then
+    if [ "$choice" == "1" ] && $direct_valid; then
         DRONE_ROS_IP="${PI_DIRECT_IP}"
         break
-    elif [ "$choice" == "2" ] && [ -n "$PI_TAILSCALE_IP" ]; then
+    elif [ "$choice" == "2" ] && $tailscale_valid; then
         DRONE_ROS_IP="${PI_TAILSCALE_IP}"
         break
     else
         echo "Invalid choice. Please try again."
     fi
 done
+
+if [ -z "$DRONE_ROS_IP" ]; then
+// ...existing code...
 
 if [ -z "$DRONE_ROS_IP" ]; then
     echo "ERROR: Drone's ROS IP was not set. Exiting."
@@ -103,13 +116,15 @@ docker run -it --rm \
     -e ROS_MASTER_URI="http://${DRONE_ROS_IP}:11311" \
     -e ROS_IP="${DRONE_ROS_IP}" \
     -v /dev:/dev \
-    -v "$(pwd)/src/fastdrone/config:/root/catkin_ws/src/fastdrone/config" \
-    -v "$(pwd)/src/realflight_modules/VINS-Fusion/config:/root/catkin_ws/src/fastdrone/src/realflight_modules/VINS-Fusion/config" \
-    -v "$(pwd)/src/realflight_modules/VINS-Fusion/vins_estimator/launch:/root/catkin_ws/src/fastdrone/src/realflight_modules/VINS-Fusion/vins_estimator/launch" \
+    # --- CORRECTED VOLUME MOUNTS ---
+    # The path inside the container (after the colon) should not have the 'fastdrone' subdirectory.
+    -v "$(pwd)/src/realflight_modules/VINS-Fusion/config:/root/catkin_ws/src/realflight_modules/VINS-Fusion/config" \
+    -v "$(pwd)/src/realflight_modules/VINS-Fusion/vins_estimator/launch:/root/catkin_ws/src/realflight_modules/VINS-Fusion/vins_estimator/launch" \
     -v "$(pwd)/src/planner/plan_manage/launch:/root/catkin_ws/src/planner/plan_manage/launch" \
     -v "$(pwd)/shfiles:/root/shfiles" \
     -v "$(pwd)/vins_output:/root/vins_output" \
-    fastdrone_image \
+    # --- CORRECTED IMAGE NAME AND TAG ---
+    fastdrone_image_pi:latest-arm64 \
     /root/shfiles/server.sh # Execute the server setup script
     
 #Opens another terminal in the docker session (this line will only run if the above docker run command exits)
