@@ -109,7 +109,7 @@ docker run -it --rm \
     -v "$(pwd)/src/planner/plan_manage/launch:/root/catkin_ws/src/planner/plan_manage/launch" \
     -v "$(pwd)/shfiles:/root/shfiles" \
     -v "$(pwd)/vins_output:/root/vins_output" \
-    fastdrone_image_pi \
+    fastdrone_image_pi:latest-arm64 \
     /root/shfiles/server.sh # Execute the server setup script
     
 #Opens another terminal in the docker session (this line will only run if the above docker run command exits)
