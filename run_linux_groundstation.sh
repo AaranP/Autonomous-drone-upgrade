@@ -28,7 +28,7 @@ while true; do
         ROS_CONNECTION_TYPE="direct"
         while true; do
             read -p "Please enter the DIRECT IP address of the server (Raspberry Pi): " INPUT_IP
-            if [[ ! $INPUT_IP =~ ^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then
+            if [[ ! $INPUT_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
                 echo "Invalid IP address format. Please try again."
             else
                 SERVER_TARGET=$INPUT_IP
@@ -44,7 +44,7 @@ while true; do
             if [[ "$TAILSCALE_CHOICE" == "1" ]]; then
                 while true; do
                     read -p "Please enter the Tailscale IP address of the server (Raspberry Pi): " INPUT_IP
-                    if [[ ! $INPUT_IP =~ ^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then
+                    if [[ ! $INPUT_IP =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
                         echo "Invalid IP address format. Please try again."
                     else
                         SERVER_TARGET=$INPUT_IP
@@ -92,9 +92,9 @@ docker run -it --rm \
     -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
     -e QT_X11_NO_MITSHM=1 \
     -e GROUND_STATION_HOST_IP=$GROUNDSTATION_IP \
-    -e RASPBERRY_PI_TARGET_IP=$SERVER_TARGET \\
-    -e ROS_CONNECTION_TYPE=$ROS_CONNECTION_TYPE \\
-    $IMAGE_NAME:$IMAGE_TAG \\
+    -e RASPBERRY_PI_TARGET_IP=$SERVER_TARGET \
+    -e ROS_CONNECTION_TYPE=$ROS_CONNECTION_TYPE \
+    $IMAGE_NAME:$IMAGE_TAG \
     /bin/bash /root/catkin_ws/src/fastdrone/shfiles/client.sh
 
 # --- Cleanup ---

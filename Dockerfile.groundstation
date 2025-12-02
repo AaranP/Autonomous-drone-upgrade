@@ -76,6 +76,9 @@ RUN /opt/ros/noetic/lib/mavros/install_geographiclib_datasets.sh
 # If not, you can remove the 'COPY .' and 'catkin_make' lines.
 COPY . /root/catkin_ws/src/fastdrone/
 
+# Make all shell scripts executable
+RUN chmod +x /root/catkin_ws/src/fastdrone/shfiles/*.sh
+
 # Build the entire catkin workspace (if ground station needs to run custom nodes)
 WORKDIR /root/catkin_ws
 RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin_make"
