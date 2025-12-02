@@ -19,27 +19,48 @@ xhost +local:docker
 echo "Enabled X11 forwarding for local docker containers."
 
 # --- Get Server IP and connection type from user ---
-while true; do
-    read -p "Please enter the IP address of the server (Raspberry Pi): " SERVER_IP
-    if [[ ! $SERVER_IP =~ ^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then
-        echo "Invalid IP address format. Please try again."
-    else
-        break
-    fi
-done
-
-echo "Server IP set to: $SERVER_IP"
-
 ROS_CONNECTION_TYPE=""
+SERVER_TARGET=""
+
 while true; do
     read -p "How do you want to connect to the ROS Master on the Raspberry Pi? (1 for direct IP / 2 for tailscale): " CONNECTION_CHOICE
     if [[ "$CONNECTION_CHOICE" == "1" ]]; then
         ROS_CONNECTION_TYPE="direct"
-        echo "Connection type set to: Direct IP (will use provided IP $SERVER_IP for ROS_MASTER_URI)"
+        while true; do
+            read -p "Please enter the DIRECT IP address of the server (Raspberry Pi): " INPUT_IP
+            if [[ ! $INPUT_IP =~ ^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then
+                echo "Invalid IP address format. Please try again."
+            else
+                SERVER_TARGET=$INPUT_IP
+                echo "Direct IP set to: $SERVER_TARGET"
+                break
+            fi
+        done
         break
     elif [[ "$CONNECTION_CHOICE" == "2" ]]; then
         ROS_CONNECTION_TYPE="tailscale"
-        echo "Connection type set to: Tailscale (will use 'ledrone' hostname for ROS_MASTER_URI, relying on Tailscale DNS)"
+        while true; do
+            read -p "Do you want to provide the Tailscale IP (1) or use the default hostname 'ledrone' (2)? " TAILSCALE_CHOICE
+            if [[ "$TAILSCALE_CHOICE" == "1" ]]; then
+                while true; do
+                    read -p "Please enter the Tailscale IP address of the server (Raspberry Pi): " INPUT_IP
+                    if [[ ! $INPUT_IP =~ ^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$ ]]; then
+                        echo "Invalid IP address format. Please try again."
+                    else
+                        SERVER_TARGET=$INPUT_IP
+                        echo "Tailscale IP set to: $SERVER_TARGET"
+                        break
+                    fi
+                done
+                break
+            elif [[ "$TAILSCALE_CHOICE" == "2" ]]; then
+                SERVER_TARGET="ledrone"
+                echo "Using default Tailscale hostname: $SERVER_TARGET"
+                break
+            else
+                echo "Invalid choice. Please enter '1' for Tailscale IP or '2' for hostname."
+            fi
+        done
         break
     else
         echo "Invalid choice. Please enter '1' for direct IP or '2' for tailscale."
@@ -71,9 +92,9 @@ docker run -it --rm \
     -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
     -e QT_X11_NO_MITSHM=1 \
     -e GROUND_STATION_HOST_IP=$GROUNDSTATION_IP \
-    -e RASPBERRY_PI_TARGET_IP=$SERVER_IP \
-    -e ROS_CONNECTION_TYPE=$ROS_CONNECTION_TYPE \
-    $IMAGE_NAME:$IMAGE_TAG \
+    -e RASPBERRY_PI_TARGET_IP=$SERVER_TARGET \\
+    -e ROS_CONNECTION_TYPE=$ROS_CONNECTION_TYPE \\
+    $IMAGE_NAME:$IMAGE_TAG \\
     /bin/bash /root/catkin_ws/src/fastdrone/shfiles/client.sh
 
 # --- Cleanup ---
