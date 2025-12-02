@@ -81,13 +81,15 @@ echo "Ground Station IP (this machine) set to: $GROUNDSTATION_IP"
 # --- Run Docker Container ---
 echo "Starting Docker container: $CONTAINER_NAME"
 echo "Passing GROUND_STATION_HOST_IP=$GROUNDSTATION_IP to the container."
-echo "Passing RASPBERRY_PI_TARGET_IP=$SERVER_IP to the container."
+echo "Passing RASPBERRY_PI_TARGET_IP=$SERVER_TARGET to the container."
 echo "Passing ROS_CONNECTION_TYPE=$ROS_CONNECTION_TYPE to the container."
 echo "The container will execute shfiles/client.sh to set up the ROS environment."
 
 docker run -it --rm \
     --name $CONTAINER_NAME \
     --network="host" \
+    --gpus all \
+    --device=/dev/dri \
     -e DISPLAY=$DISPLAY \
     -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
     -e QT_X11_NO_MITSHM=1 \
