@@ -11,61 +11,57 @@ DRONE_ROS_IP=""
 
 echo "--- Detecting Raspberry Pi Network Interfaces ---"
 
-# Get Pi's Direct IP
-# Using 'ip a' which is more modern and robust than 'hostname -I' for multiple IPs
-PI_DIRECT_IP=$(ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -n 1) # Assumes eth0, adjust if using wlan0 or other
-if [ -z "$PI_DIRECT_IP" ]; then
-    echo "WARNING: Could not determine Raspberry Pi's direct IP from eth0. Trying wlan0."
-    PI_DIRECT_IP=$(ip -4 addr show wlan0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -n 1)
-fi
-if [ -z "$PI_DIRECT_IP" ]; then
-    echo "WARNING: Could not determine Raspberry Pi's direct IP. Check network connection."
-fi
+# Get all IPv4 addresses assigned to the Raspberry Pi
+all_ips=$(hostname -I)
 
-# Get Pi's Tailscale IP
-if command -v tailscale &> /dev/null; then
-    PI_TAILSCALE_IP=$(tailscale ip -4)
-    if [ -z "$PI_TAILSCALE_IP" ]; then
-        echo "WARNING: Tailscale is installed but not active or could not get IP. Ensure 'sudo tailscale up' is run."
+# Loop through IPs to find the direct and Tailscale IPs
+for ip in $all_ips; do
+    # Tailscale IPs are typically in the 100.x.x.x range
+    if [[ $ip == 100.* ]]; then
+        PI_TAILSCALE_IP=$ip
+    # Any other IP is considered the direct connection
+    else
+        PI_DIRECT_IP=$ip
     fi
-else
-    echo "INFO: Tailscale client not found on Raspberry Pi host. Tailscale option will be unavailable."
+done
+
+# If no direct IP was found, it might be the only one, so check all_ips again
+if [ -z "$PI_DIRECT_IP" ] && [ -n "$all_ips" ]; then
+    PI_DIRECT_IP=$(echo "$all_ips" | awk '{print $1}')
 fi
 
-echo ""
-echo "--- ROS Network Configuration for DRONE (Raspberry Pi) ---"
-if [ -n "$PI_DIRECT_IP" ]; then
-    echo "Raspberry Pi's detected Direct IP:     ${PI_DIRECT_IP}"
-fi
-if [ -n "$PI_TAILSCALE_IP" ]; then
-    echo "Raspberry Pi's detected Tailscale IP:  ${PI_TAILSCALE_IP}"
-fi
-echo ""
+# --- Debugging: Show the detected IPs ---
+echo "--- Detected IPs ---"
+echo "Direct IP found: ${PI_DIRECT_IP:-None}"
+echo "Tailscale IP found: ${PI_TAILSCALE_IP:-None}"
+echo "--------------------"
 
-# Ensure at least one IP is available to choose from
+# Check if at least one IP was found
 if [ -z "$PI_DIRECT_IP" ] && [ -z "$PI_TAILSCALE_IP" ]; then
-    echo "ERROR: No usable IP addresses detected for Raspberry Pi. Exiting."
-    exit 1
-// ...existing code...
+    echo "Error: No network interfaces found. Please check your connection."
     exit 1
 fi
 
+# --- User Selection ---
 while true; do
     echo "Choose connection method for the Drone's ROS Master:"
 
     # Store which options are valid to make logic simpler
-    direct_valid=false
-    tailscale_valid=false
+    direct_valid="false"
+    tailscale_valid="false"
     prompt_options=""
 
+    # Option 1: Direct IP
     if [ -n "$PI_DIRECT_IP" ]; then
-        echo "1. Direct (Non-Tailscale) IP"
-        direct_valid=true
+        echo "1. Direct (Non-Tailscale) IP: ${PI_DIRECT_IP}"
+        direct_valid="true"
         prompt_options="Direct"
     fi
+
+    # Option 2: Tailscale IP
     if [ -n "$PI_TAILSCALE_IP" ]; then
-        echo "2. Tailscale VPN IP"
-        tailscale_valid=true
+        echo "2. Tailscale VPN IP: ${PI_TAILSCALE_IP}"
+        tailscale_valid="true"
         if [ -n "$prompt_options" ]; then
             prompt_options+=", Tailscale"
         else
@@ -73,18 +69,21 @@ while true; do
         fi
     fi
 
+    # Determine default choice
     default_choice="1"
-    if ! $direct_valid && $tailscale_valid; then # If direct is not available, default to tailscale
+    if [ "$direct_valid" = "false" ] && [ "$tailscale_valid" = "true" ]; then
         default_choice="2"
     fi
     
     read -p "Enter choice (${prompt_options}, default $default_choice): " choice
     choice=${choice:-$default_choice} # Default to choice if no input
 
-    if [ "$choice" == "1" ] && $direct_valid; then
+    # --- CORRECTED LOGIC ---
+    # Use explicit string comparison for maximum shell compatibility.
+    if [ "$choice" = "1" ] && [ "$direct_valid" = "true" ]; then
         DRONE_ROS_IP="${PI_DIRECT_IP}"
         break
-    elif [ "$choice" == "2" ] && $tailscale_valid; then
+    elif [ "$choice" = "2" ] && [ "$tailscale_valid" = "true" ]; then
         DRONE_ROS_IP="${PI_TAILSCALE_IP}"
         break
     else
@@ -93,20 +92,13 @@ while true; do
 done
 
 if [ -z "$DRONE_ROS_IP" ]; then
-// ...existing code...
-
-if [ -z "$DRONE_ROS_IP" ]; then
-    echo "ERROR: Drone's ROS IP was not set. Exiting."
+    echo "Error: No ROS IP selected. Exiting."
     exit 1
 fi
 
-echo "--- Final Drone ROS Configuration ---"
-echo "Drone ROS_MASTER_URI will be: http://${DRONE_ROS_IP}:11311"
-echo "Drone ROS_IP will be: ${DRONE_ROS_IP}"
-echo "--------------------------------------------------------------------------------"
-echo "IMPORTANT: On your Ground Station, use THIS IP for ROS_MASTER_URI: ${DRONE_ROS_IP}"
-echo "--------------------------------------------------------------------------------"
+echo "--- Using IP ${DRONE_ROS_IP} for ROS communication ---"
 
+# --- Run Docker Container ---
 echo "--- Starting Docker Drone Container ---"
 docker run -it --rm \
     --name fast_drone_container \
