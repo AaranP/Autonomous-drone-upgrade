@@ -94,19 +94,26 @@ elif [[ -f /proc/version && "$(grep -i microsoft /proc/version)" != "" ]]; then
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     CURRENT_OS_TYPE="linux"
     echo "Detected native Linux host."
-    # On Linux, the DISPLAY variable is usually already set correctly.
-    X_DISPLAY=$DISPLAY
-
-    # Get Linux host's Direct IP
-    # 'hostname -I' can list multiple IPs, so we take the first one.
-    GS_DIRECT_IP=$(hostname -I | awk '{print $1}')
+    xhost +local:docker # Allow Docker to connect to your X server
+    X_DISPLAY=":0"
+    
+    # Get Linux's Direct IP
+    GS_DIRECT_IP=$(hostname -I | awk '{print $1}' | head -n 1) # Use head -n 1 to get only the first IP
     if [ -z "$GS_DIRECT_IP" ]; then
-        echo "WARNING: Could not determine Linux host's direct IP. Check your network connection."
+        GS_DIRECT_IP=$(ip route get 1.1.1.1 | awk '{print $7; exit}')
+    fi
+    if [ -z "$GS_DIRECT_IP" ]; then
+        echo "WARNING: Could not determine Linux host direct IP. Check network connection."
     fi
 
-    # Try to get Linux host's Tailscale IP
+    # Try to get Linux's Tailscale IP
     if command -v tailscale &> /dev/null; then
         GS_TAILSCALE_IP=$(tailscale ip -4 2>/dev/null)
+        if [ -z "$GS_TAILSCALE_IP" ]; then
+            echo "WARNING: Tailscale is installed but not active or could not get IP. Ensure 'tailscale up' is run on your Linux host."
+        fi
+    else
+        echo "INFO: Tailscale client not found on Linux host. Tailscale option will be unavailable."
     fi
 
 else
@@ -120,14 +127,26 @@ X11_VOLUME=""
 XAUTHORITY_VOLUME="" # Initialize for all OS types
 
 if [ "$CURRENT_OS_TYPE" == "linux" ]; then
-    # For native Linux, we must mount the X11 socket and the .Xauthority file
-    # to allow the container to connect to the host's display server.
-    echo "Configuring X11 forwarding for native Linux."
-    # This command allows local connections to the X server from docker containers.
-    # It's generally safe and is reset on reboot.
-    xhost +local:
-    X11_VOLUME="-v /tmp/.X11-unix:/tmp/.X11-unix:rw"
-    XAUTHORITY_VOLUME="-v $HOME/.Xauthority:/root/.Xauthority:rw"
+    echo "Configuring X11 forwarding for native Linux host..."
+    # Ensure X server allows connection from local Docker processes
+    xhost +local:docker # Allow Docker to connect to your X server
+    
+    X11_VOLUME="-v /tmp/.X11-unix:/tmp/.X11-unix"
+    
+    # --- XAUTHORITY SETUP FOR LINUX ---
+    # Create a temporary Xauthority file for the container if xauth is available
+    if command -v xauth &> /dev/null; then
+        XAUTH_HOST_PATH="${HOME}/.docker.xauth" # Use HOME for write permissions
+        touch "${XAUTH_HOST_PATH}" # Ensure it exists
+        # Merge the host's current display authorization into the temporary file
+        xauth nlist "$DISPLAY" | sed -e 's/^..../ffff/' | xauth -f "${XAUTH_HOST_PATH}" nmerge -
+        XAUTHORITY_VOLUME="-v ${XAUTH_HOST_PATH}:${XAUTH_HOST_PATH} -e XAUTHORITY=${XAUTH_HOST_PATH}"
+        echo "XAUTHORITY file '${XAUTH_HOST_PATH}' created and mounted."
+    else
+        echo "WARNING: 'xauth' command not found on your Linux host. Xauthority forwarding cannot be used, which might lead to display issues."
+        echo "Please install 'xauth' (e.g., 'sudo apt install x11-xserver-utils' on Ubuntu) if problems persist."
+    fi
+    # --- END XAUTHORITY SETUP ---
 fi
 
 # Final checks after OS detection
@@ -285,13 +304,14 @@ echo "---"
 echo "Starting Docker Ground Station Container..."
 
 docker run -it --rm \
-    --net=host \
-    -e DISPLAY=$X_DISPLAY \
-    -e QT_X11_NO_MITSHM=1 \
-    $X11_VOLUME \
-    $XAUTHORITY_VOLUME \
-    -e ROS_IP=${FINAL_GROUND_STATION_IP} \
-    -e ROS_MASTER_URI=http://${FINAL_RASPBERRY_PI_IP}:11311 \
-    --name ${CONTAINER_NAME} \
-    ${IMAGE_NAME}:${IMAGE_TAG} \
+    --name "${CONTAINER_NAME}" \
+    --network=host \
+    -e DISPLAY="${X_DISPLAY}" \
+    -e GROUND_STATION_HOST_IP="${FINAL_GROUND_STATION_IP}" \
+    -e RASPBERRY_PI_TARGET_IP="${FINAL_RASPBERRY_PI_IP}" \
+    ${X11_VOLUME} \
+    ${XAUTHORITY_VOLUME} \  # Add this line to pass XAUTHORITY
+    -v "$(pwd)/shfiles:/root/shfiles" \
+    --add-host "${DRONE_HOSTNAME}:${FINAL_RASPBERRY_PI_IP}" \
+    "${IMAGE_NAME}:${IMAGE_TAG}" \
     /bin/bash -c "source /opt/ros/noetic/setup.bash && source /root/catkin_ws/devel/setup.bash && source /root/shfiles/client.sh && /bin/bash"
