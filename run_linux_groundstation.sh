@@ -89,10 +89,12 @@ docker run -it --rm \
     --name $CONTAINER_NAME \
     --network="host" \
     --gpus all \
-    --device=/dev/dri \
+    --privileged \
     -e DISPLAY=$DISPLAY \
+    -e "QT_X11_NO_MITSHM=1" \
+    -e "NVIDIA_VISIBLE_DEVICES=all" \
+    -e "NVIDIA_DRIVER_CAPABILITIES=all" \
     -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
-    -e QT_X11_NO_MITSHM=1 \
     -e GROUND_STATION_HOST_IP=$GROUNDSTATION_IP \
     -e RASPBERRY_PI_TARGET_IP=$SERVER_TARGET \
     -e ROS_CONNECTION_TYPE=$ROS_CONNECTION_TYPE \
