@@ -78,6 +78,10 @@ RUN /opt/ros/noetic/lib/mavros/install_geographiclib_datasets.sh
 # Copy only the 'src' directory from your project into the workspace 'src' folder
 COPY src/ /root/catkin_ws/src/
 
+# Copy the shfiles directory and make its contents executable
+COPY shfiles/ /root/shfiles/
+RUN chmod +x /root/shfiles/*.sh
+
 # Build the entire catkin workspace (if ground station needs to run custom nodes)
 WORKDIR /root/catkin_ws
 RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin_make"
