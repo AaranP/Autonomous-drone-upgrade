@@ -14,17 +14,18 @@ fi
 
 echo "Detected Drone IP Address: ${DRONE_ROS_IP}"
 
+# Ensure ROS setup is sourced first, as these might try to auto-detect ROS_IP
+source /opt/ros/noetic/setup.bash
+source /root/catkin_ws/devel/setup.bash
+
+# NOW, explicitly set ROS_MASTER_URI, ROS_IP, and ROS_HOSTNAME
+# This ensures your chosen IP takes precedence
 export ROS_MASTER_URI="http://${DRONE_ROS_IP}:11311"
 export ROS_IP="${DRONE_ROS_IP}"
 export ROS_HOSTNAME="${DRONE_ROS_IP}" # Optional, but good practice
 
 echo "ROS_MASTER_URI set to: ${ROS_MASTER_URI}"
 echo "ROS_IP set to: ${ROS_IP}"
-
-# Ensure ROS setup is sourced
-source /opt/ros/noetic/setup.bash
-source /root/catkin_ws/devel/setup.bash
-
 echo "ROS environment configured."
 
 # --- Start ROS Master automatically in the background ---
