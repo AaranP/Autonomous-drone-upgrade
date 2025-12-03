@@ -1,4 +1,4 @@
-# Use a ROS Noetic desktop base image
+# Use a ROS Noetic desktop base image, only works for x86, needs emulation for arm
 FROM osrf/ros:noetic-desktop-full
 
 # Set up environment variables
