@@ -8,7 +8,7 @@ if [ -z "$GROUND_STATION_HOST_IP" ]; then
     echo "Please ensure 'run_groundstation_container.sh' on the host passes this IP. Exiting."
     exit 1
 fi
-echo "Detected Ground Station IP Address: ${GROUND_STATION_HOST_IP}"
+echo "Detected Ground Station Host IP Address (from host script): ${GROUND_STATION_HOST_IP}"
 
 # Get Raspberry Pi Target IP from environment variable passed by run_groundstation_container.sh
 if [ -z "$RASPBERRY_PI_TARGET_IP" ]; then
@@ -16,14 +16,47 @@ if [ -z "$RASPBERRY_PI_TARGET_IP" ]; then
     echo "Please ensure 'run_groundstation_container.sh' on the host passes this IP. Exiting."
     exit 1
 fi
-echo "Using Raspberry Pi Target IP Address: ${RASPBERRY_PI_TARGET_IP}"
+echo "Using Raspberry Pi Target IP Address (ROS_MASTER_URI): ${RASPBERRY_PI_TARGET_IP}"
 
+# --- Source ROS setup files FIRST ---
+# This is crucial so that subsequent 'export' commands override any auto-detected ROS settings
+source /opt/ros/noetic/setup.bash || { echo "ERROR: Failed to source /opt/ros/noetic/setup.bash. Exiting."; exit 1; }
+source /root/catkin_ws/devel/setup.bash || { echo "ERROR: Failed to source /root/catkin_ws/devel/setup.bash. Exiting."; exit 1; }
+
+# Set ROS_MASTER_URI to point to the remote Raspberry Pi
 export ROS_MASTER_URI="http://${RASPBERRY_PI_TARGET_IP}:11311"
-export ROS_IP="${GROUND_STATION_HOST_IP}"
-export ROS_HOSTNAME="${GROUND_STATION_HOST_IP}" # Optional, good practice for some ROS tools
+
+# Ensure ROS_MASTER_URI is set from the RASPBERRY_PI_TARGET_IP passed from the host script
+if [ -z "$RASPBERRY_PI_TARGET_IP" ]; then
+    echo "ERROR: RASPBERRY_PI_TARGET_IP environment variable not set. ROS Master connection will fail."
+    # Optionally, you could exit or prompt for manual input here
+else
+    export ROS_MASTER_URI="http://${RASPBERRY_PI_TARGET_IP}:11311"
+    echo "ROS_MASTER_URI set to: ${ROS_MASTER_URI}"
+fi
+
+# --- Set ROS_IP and ROS_HOSTNAME ---
+# This allows external nodes (like on the Pi) to connect to this container's ROS nodes.
+if [ -z "$GROUND_STATION_HOST_IP" ]; then
+    echo "ERROR: GROUND_STATION_HOST_IP environment variable not set. ROS IP will default to local."
+    export ROS_IP="127.0.0.1"
+    export ROS_HOSTNAME="localhost"
+else
+    export ROS_IP="${GROUND_STATION_HOST_IP}"
+    # Check if we are using Tailscale. If so, use the Tailscale hostname for ROS_HOSTNAME
+    # to ensure proper name resolution across the VPN. The container has an /etc/hosts
+    # entry mapping this hostname to 127.0.0.1 for local loopback connections.
+    if [[ "${GROUND_STATION_HOST_IP}" == 100.* ]] && [ -n "$GROUND_STATION_TAILSCALE_HOSTNAME" ]; then
+        export ROS_HOSTNAME="${GROUND_STATION_TAILSCALE_HOSTNAME}"
+    else
+        # Fallback to the IP if not on Tailscale or hostname not provided.
+        export ROS_HOSTNAME="${GROUND_STATION_HOST_IP}"
+    fi
+fi
 
 echo "ROS_MASTER_URI set to: ${ROS_MASTER_URI}"
 echo "ROS_IP set to: ${ROS_IP}"
+echo "ROS_HOSTNAME set to: ${ROS_HOSTNAME}"
 
 echo "Attempting to connect to ROS Master on Raspberry Pi at ${ROS_MASTER_URI}..."
 # Use a timeout to avoid indefinite waiting
@@ -37,43 +70,9 @@ else
     echo "2. Verify the Docker container on the Raspberry Pi is running and 'server.sh' has been executed."
     echo "3. Confirm the Raspberry Pi's IP address (${RASPBERRY_PI_TARGET_IP}) is correct and reachable from this Ground Station (e.g., using ping or if firewalls are not blocking)."
     echo "4. Double-check that the chosen IP types (Direct/Tailscale) match on both the Pi and Ground Station."
-    # Do not exit here, allow user to try ROS commands, but warn them.
 fi
 
 echo "ROS environment configured. You can now run ROS commands."
 
-# --- ROS IP Configuration for the Ground Station (Client) ---
-# GROUND_STATION_HOST_IP is passed from run_groundstation_container.sh script
-if [ -z "$GROUND_STATION_HOST_IP" ]; then
-    echo "ERROR: GROUND_STATION_HOST_IP environment variable is not set. Cannot configure ROS_IP."
-    exit 1
-fi
-
-export ROS_IP="${GROUND_STATION_HOST_IP}"
-echo "Set ROS_IP to: ${ROS_IP}"
-
-# --- ROS_MASTER_URI Configuration (Points to Drone) ---
-# Assuming the Pi's Tailscale hostname is 'ledrone' as per your requirement.
-# This relies on Tailscale DNS resolving 'ledrone' to its Tailscale IP,
-# or local DNS resolving it to a direct IP if available.
-# Ensure 'ledrone' is configured as the Tailscale hostname for your Pi.
-DRONE_HOSTNAME="ledrone" 
-
-# Attempt to resolve the Drone's IP using the hostname.
-# This will prioritize Tailscale DNS if configured, then local DNS.
-DRONE_RESOLVED_IP=$(getent hosts "${DRONE_HOSTNAME}" | awk '{print $1}' | head -n 1)
-
-if [ -z "$DRONE_RESOLVED_IP" ]; then
-    echo "ERROR: Could not resolve IP for drone hostname '${DRONE_HOSTNAME}'. Please ensure drone is online and Tailscale/local DNS is working."
-    exit 1
-fi
-
-export ROS_MASTER_URI="http://${DRONE_RESOLVED_IP}:11311"
-echo "Set ROS_MASTER_URI to: ${ROS_MASTER_URI}"
-
-
-
-# You might want to add other client-specific ROS commands here
-# For example, launching Rviz or PlotJuggler
 echo "Starting ROS client..."
-/bin/bash # Keep the container alive with a bash shell
+exec /bin/bash # Keep the container alive with a bash shell

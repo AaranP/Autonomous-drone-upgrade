@@ -3,7 +3,7 @@
 
 
 #!/bin/bash
-chmod +x "$0"  # Ensure script is executable (safe to run multiple times)
+# The 'chmod +x run_groundstation_container.sh' should be run once from your terminal, not inside the script itself.
 
 # The 'chmod +x run_groundstation_container.sh' should be run once from your terminal, not inside the script itself.
 # Removed: chmod +x run_groundstation_container.sh
@@ -13,6 +13,7 @@ IMAGE_NAME="fastdrone_groundstation"
 IMAGE_TAG="latest" # Assuming 'latest' is the default if not specified here
 CONTAINER_NAME="fastdrone_groundstation_container"
 DRONE_HOSTNAME="ledrone" # Expected Tailscale hostname of the Raspberry Pi
+GROUND_STATION_TAILSCALE_HOSTNAME="ap-wsl" # Your WSL's device name on Tailscale
 
 # --- X11 Forwarding Setup (for GUI applications like Rviz, PlotJuggler) ---
 X_DISPLAY="" # Will be set by OS detection
@@ -284,12 +285,16 @@ echo "Starting Docker Ground Station Container..."
 
 docker run -it --rm \
     --name "${CONTAINER_NAME}" \
-    --network=host \
+    --net=host \
+    --privileged \
+    --dns=100.100.100.100 \
     -e DISPLAY="${X_DISPLAY}" \
     -e GROUND_STATION_HOST_IP="${FINAL_GROUND_STATION_IP}" \
     -e RASPBERRY_PI_TARGET_IP="${FINAL_RASPBERRY_PI_IP}" \
+    -e GROUND_STATION_TAILSCALE_HOSTNAME="${GROUND_STATION_TAILSCALE_HOSTNAME}" \
     ${X11_VOLUME} \
     -v "$(pwd)/shfiles:/root/shfiles" \
     --add-host "${DRONE_HOSTNAME}:${FINAL_RASPBERRY_PI_IP}" \
+    --add-host "${GROUND_STATION_TAILSCALE_HOSTNAME}:127.0.0.1" \
     "${IMAGE_NAME}:${IMAGE_TAG}" \
     /bin/bash -c "source /opt/ros/noetic/setup.bash && source /root/catkin_ws/devel/setup.bash && source /root/shfiles/client.sh && /bin/bash"
