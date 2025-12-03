@@ -1,4 +1,6 @@
 #!/bin/bash
+# Fixes cross-build emulation for ARM64 (required like in builddocker.sh)
+docker run --privileged --rm tonistiigi/binfmt --install all
 
 # Define the image name and tag for the ARM64 build
 IMAGE_NAME="fastdrone_image_pi"
