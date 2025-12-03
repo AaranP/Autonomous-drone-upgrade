@@ -1,8 +1,37 @@
-# Use a ROS Noetic base image
-FROM osrf/ros:noetic-desktop-full
+#Builds the image for the ARM64 using ubutuntu 20.04 as base to deal with ROS noetic not having ARM version
+FROM ubuntu:20.04
 # Set up environment variables
 ENV HOME=/root
 ENV DEBIAN_FRONTEND=noninteractive
+
+#This builds the entire ROS noetic from scratch for ARM 64 using the ARM ubuntu 20.04 base image 
+# Set locale
+RUN apt-get update && apt-get install -y locales
+RUN locale-gen en_US en_US.UTF-8
+RUN update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+
+# Setup sources.list for ROS
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gnupg2 \
+    curl \
+    lsb-release \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu focal main" > /etc/apt/sources.list.d/ros-latest.list'
+
+# Setup keys
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+
+# Ensure we have tools to add apt keys and secure transports
+# (gnupg2 is required by apt-key; curl/lsb-release help with key retrieval and distro detection)
+
+
+# Install ROS Noetic desktop-full
+RUN apt-get update && apt-get install -y --no-install-recommends ros-noetic-desktop-full \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /root/catkin_ws/src
 
 # Install system dependencies
@@ -26,33 +55,41 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     net-tools \
     openssh-server \
     ros-noetic-ddynamic-reconfigure \
-    ros-noetic-plotjuggler \
-    ros-noetic-plotjuggler-ros \
     ros-noetic-mavros \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Realsense SDK dependencies (as per official guide)
-# Add Intel's public key
-RUN apt-key adv --keyserver keys.gnupg.net --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE || \
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE
-
-# Add Intel's apt repository
-RUN sh -c 'echo "deb https://librealsense.intel.com/Debian/apt-repo `lsb_release -cs` main" > /etc/apt/sources.list.d/realsense-apt-source.list'
-
-# Install Realsense SDK and ROS wrappers
+# Install Realsense SDK from source for ARM64, as pre-built binaries are not available.
+# First, install build dependencies for librealsense.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    librealsense2-dkms \
-    librealsense2-utils \
-    librealsense2-dev \
-    librealsense2-dbg \
-    ros-noetic-realsense2-camera \
+    libusb-1.0-0-dev \
+    libssl-dev \
+    pkg-config \
+    libgtk-3-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Clone, build, and install librealsense from scratch since existing one doesn't support ARM natively.
+# This is done in a single RUN command to keep the Docker image layers minimal.
+# We build with the RSUSB backend, which doesn't require kernel patching (DKMS), making it ideal for ARM devices.
+ENV REALSENSE_VERSION=2.50.0
+RUN cd /root && \
+    git clone --depth 1 --branch v${REALSENSE_VERSION} https://github.com/IntelRealSense/librealsense.git && \
+    cd librealsense && \
+    mkdir build && cd build && \
+    cmake ../ -DBUILD_EXAMPLES=false \
+              -DBUILD_GRAPHICAL_EXAMPLES=false \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DFORCE_RSUSB_BACKEND=ON && \
+    make -j$(nproc) && \
+    make install && \
+    cd /root && \
+    rm -rf /root/librealsense
 
 # Install GeographicLib datasets for MAVROS
 RUN /opt/ros/noetic/lib/mavros/install_geographiclib_datasets.sh
 
-# Clone Ego-Planner (fastdrone)
-COPY . /root/catkin_ws/src/fastdrone/
+# --- CORRECTED ---
+# Copy only the 'src' directory from your project into the workspace 'src' folder
+COPY src/ /root/catkin_ws/src/
 
 # Build the entire catkin workspace
 WORKDIR /root/catkin_ws

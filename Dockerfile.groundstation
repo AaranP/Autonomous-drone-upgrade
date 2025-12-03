@@ -1,4 +1,4 @@
-# Use a ROS Noetic desktop base image
+# Use a ROS Noetic desktop base image, only works for x86, needs emulation for arm
 FROM osrf/ros:noetic-desktop-full
 
 # Set up environment variables
@@ -74,7 +74,9 @@ RUN /opt/ros/noetic/lib/mavros/install_geographiclib_datasets.sh
 # Assuming your ground station might also need some of the project's ROS packages
 # for Rviz configurations or specific client nodes.
 # If not, you can remove the 'COPY .' and 'catkin_make' lines.
-COPY . /root/catkin_ws/src/fastdrone/
+# --- CORRECTED ---
+# Copy only the 'src' directory from your project into the workspace 'src' folder
+COPY src/ /root/catkin_ws/src/
 
 # Make all shell scripts executable
 RUN chmod +x /root/catkin_ws/src/fastdrone/shfiles/*.sh
