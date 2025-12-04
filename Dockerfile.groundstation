@@ -62,8 +62,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxcb-xfixes0 \
     libxcb-xkb1 \
     libxkbcommon-x11-0 \
-    # If the problem persists, you might need 'qt5-default' or 'qtbase5-dev'
-    # if the core Qt runtime libraries are not fully present.
+    qtbase5-dev \
+    tigervnc-standalone-server \
+    xfonts-base \
+    # VNC server and fonts for better compatibility
     && rm -rf /var/lib/apt/lists/*
 # --- End Realsense SDK installation ---
 
@@ -89,6 +91,20 @@ RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin_make"
 # Configure environment for ROS (for interactive sessions)
 RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
 RUN echo "source /root/catkin_ws/devel/setup.bash" >> ~/.bashrc
+
+# Create VNC startup script
+RUN mkdir -p /root/.vnc && \
+    echo '#!/bin/bash' > /root/start_vnc.sh && \
+    echo 'echo "Starting VNC server on :1 (port 5901)..."' >> /root/start_vnc.sh && \
+    echo 'vncserver :1 -geometry 1920x1080 -depth 24' >> /root/start_vnc.sh && \
+    echo 'echo "VNC server started. Connect with: 127.0.0.1:5901"' >> /root/start_vnc.sh && \
+    echo 'source /opt/ros/noetic/setup.bash' >> /root/start_vnc.sh && \
+    echo 'source /root/catkin_ws/devel/setup.bash' >> /root/start_vnc.sh && \
+    echo '/bin/bash' >> /root/start_vnc.sh && \
+    chmod +x /root/start_vnc.sh
+
+# Expose VNC port
+EXPOSE 5901
 
 # Set default command to bash for interactive use
 CMD ["/bin/bash"]

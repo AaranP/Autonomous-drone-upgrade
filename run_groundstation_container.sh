@@ -13,7 +13,8 @@ IMAGE_NAME="fastdrone_groundstation"
 IMAGE_TAG="latest" # Assuming 'latest' is the default if not specified here
 CONTAINER_NAME="fastdrone_groundstation_container"
 DRONE_HOSTNAME="ledrone" # Expected Tailscale hostname of the Raspberry Pi
-GROUND_STATION_TAILSCALE_HOSTNAME="ap-wsl" # Your WSL's device name on Tailscale
+#GROUND_STATION_TAILSCALE_HOSTNAME="ap-wsl" # Your WSL's device name on Tailscale
+GROUND_STATION_TAILSCALE_HOSTNAME="aaranmac" # Your WSL's device name on Tailscale
 
 # --- X11 Forwarding Setup (for GUI applications like Rviz, PlotJuggler) ---
 X_DISPLAY="" # Will be set by OS detection
@@ -294,7 +295,17 @@ docker run -it --rm \
     -e GROUND_STATION_TAILSCALE_HOSTNAME="${GROUND_STATION_TAILSCALE_HOSTNAME}" \
     ${X11_VOLUME} \
     -v "$(pwd)/shfiles:/root/shfiles" \
+    -p 5901:5901 \
     --add-host "${DRONE_HOSTNAME}:${FINAL_RASPBERRY_PI_IP}" \
     --add-host "${GROUND_STATION_TAILSCALE_HOSTNAME}:127.0.0.1" \
     "${IMAGE_NAME}:${IMAGE_TAG}" \
     /bin/bash -c "source /opt/ros/noetic/setup.bash && source /root/catkin_ws/devel/setup.bash && source /root/shfiles/client.sh && /bin/bash"
+
+echo ""
+echo "--- Docker Ground Station Container Started ---"
+echo "VNC is available on your Mac at: 127.0.0.1:5901"
+echo "To use VNC:"
+echo "  1. Inside the container, run: /root/start_vnc.sh"
+echo "  2. On your Mac, download a VNC viewer (e.g., RealVNC, TigerVNC, or open with 'Screen Sharing')"
+echo "  3. Connect to: 127.0.0.1:5901"
+echo "  4. Then you can run: rviz, rqt, or any other GUI application"
