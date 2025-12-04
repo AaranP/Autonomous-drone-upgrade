@@ -33,6 +33,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-noetic-ddynamic-reconfigure \
     ros-noetic-mavros \
     # Add any other specific ground station tools if needed, e.g., ros-noetic-rqt*
+    # VNC server and fonts for better compatibility on macOS and general GUI forwarding
+    libxcb-xinerama0 \
+    libxcb-icccm4 \
+    libxcb-xkb1 \
+    libxkbcommon-x11-0 \
+    qtbase5-dev \
+    tigervnc-standalone-server \
+    xfonts-base \
+    tigervnc-common \
+    # Ensure correct Qt platform themes are available for some GUI applications
+    qt5-gtk2-platformtheme \
     && rm -rf /var/lib/apt/lists/*
 
 # --- Install Realsense SDK dependencies (as per official guide) ---
@@ -92,15 +103,30 @@ RUN /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin_make"
 RUN echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
 RUN echo "source /root/catkin_ws/devel/setup.bash" >> ~/.bashrc
 
-# Create VNC startup script
+# Create VNC startup script kinda optional
 RUN mkdir -p /root/.vnc && \
-    echo '#!/bin/bash' > /root/start_vnc.sh && \
-    echo 'echo "Starting VNC server on :1 (port 5901)..."' >> /root/start_vnc.sh && \
-    echo 'vncserver :1 -geometry 1920x1080 -depth 24' >> /root/start_vnc.sh && \
-    echo 'echo "VNC server started. Connect with: 127.0.0.1:5901"' >> /root/start_vnc.sh && \
-    echo 'source /opt/ros/noetic/setup.bash' >> /root/start_vnc.sh && \
-    echo 'source /root/catkin_ws/devel/setup.bash' >> /root/start_vnc.sh && \
-    echo '/bin/bash' >> /root/start_vnc.sh && \
+    echo '#!/bin/bash' > /root/.vnc/xstartup && \
+    echo 'unset SESSION_MANAGER' >> /root/.vnc/xstartup && \
+    echo 'unset DBUS_SESSION_BUS_ADDRESS' >> /root/.vnc/xstartup && \
+    echo 'startxfce4 &' >> /root/.vnc/xstartup && \
+    chmod +x /root/.vnc/xstartup
+
+# Add the actual start_vnc.sh script with improved hostname handling
+RUN echo '#!/bin/bash' > /root/start_vnc.sh && \
+    echo 'export USER=root' >> /root/start_vnc.sh && \
+    echo 'export PATH=$PATH:/usr/bin' >> /root/start_vnc.sh && \
+    echo 'if ! pgrep Xtigervnc > /dev/null; then' >> /root/start_vnc.sh && \
+    echo '  # Set a VNC password if not already set' >> /root/start_vnc.sh && \
+    echo '  if [ ! -f ~/.vnc/passwd ]; then' >> /root/start_vnc.sh && \
+    echo '    echo "You will need to set a VNC password the first time you run this script." ' >> /root/start_vnc.sh && \
+    echo '    vncpasswd' >> /root/start_vnc.sh && \
+    echo '  fi' >> /root/start_vnc.sh && \
+    echo '  echo "Starting VNC server on :1 (port 5901)..."' >> /root/start_vnc.sh && \
+    echo '  vncserver :1 -geometry 1280x800 -depth 24 -localhost no -rfbport 5901' >> /root/start_vnc.sh && \
+    echo 'else' >> /root/start_vnc.sh && \
+    echo '  echo "VNC server already running." ' >> /root/start_vnc.sh && \
+    echo 'fi' >> /root/start_vnc.sh && \
+    echo 'echo "Connect with: 127.0.0.1:5901"' >> /root/start_vnc.sh && \
     chmod +x /root/start_vnc.sh
 
 # Expose VNC port

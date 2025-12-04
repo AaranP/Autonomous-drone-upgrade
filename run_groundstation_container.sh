@@ -50,7 +50,23 @@ CURRENT_OS_TYPE=""
 if [[ "$OSTYPE" == "darwin"* ]]; then
     CURRENT_OS_TYPE="macos"
     echo "Detected macOS host."
-    # Ensure XQuartz is installed and running, and 'xhost +' has been run in an XQuartz terminal.
+    echo ""
+    echo "--- macOS X11 Forwarding Prerequisites ---"
+    echo "To run GUI applications (like Rviz or VNC) from the Docker container on macOS, you MUST:"
+    echo "1. Install and launch XQuartz (find it in Applications -> XQuartz)."
+    echo "2. Open a Terminal within XQuartz (Go to Applications -> Utilities -> Terminal from the XQuartz menu)."
+    echo "3. In the XQuartz Terminal, run the command: xhost +"
+    echo "   (This command allows connections from Docker to your Mac's X server. You may need to run it again if XQuartz is restarted.)"
+    echo "------------------------------------------"
+    read -p "Have you completed these XQuartz setup steps? (y/N) " xquartz_check
+    if [[ ! "$xquartz_check" =~ ^[Yy]$ ]]; then
+        echo "WARNING: XQuartz prerequisites not confirmed. GUI applications may fail to display."
+        read -p "Do you wish to proceed anyway? (y/N) " proceed_anyway
+        if [[ ! "$proceed_anyway" =~ ^[Yy]$ ]]; then
+            echo "Exiting. Please complete XQuartz setup and re-run the script."
+            exit 1
+        fi
+    fi
     X_DISPLAY="host.docker.internal:0" # For XQuartz on Docker Desktop
     
     # Get Mac's Direct IP
@@ -288,24 +304,13 @@ docker run -it --rm \
     --name "${CONTAINER_NAME}" \
     --net=host \
     --privileged \
-    --dns=100.100.100.100 \
     -e DISPLAY="${X_DISPLAY}" \
     -e GROUND_STATION_HOST_IP="${FINAL_GROUND_STATION_IP}" \
     -e RASPBERRY_PI_TARGET_IP="${FINAL_RASPBERRY_PI_IP}" \
     -e GROUND_STATION_TAILSCALE_HOSTNAME="${GROUND_STATION_TAILSCALE_HOSTNAME}" \
     ${X11_VOLUME} \
     -v "$(pwd)/shfiles:/root/shfiles" \
-    -p 5901:5901 \
     --add-host "${DRONE_HOSTNAME}:${FINAL_RASPBERRY_PI_IP}" \
     --add-host "${GROUND_STATION_TAILSCALE_HOSTNAME}:127.0.0.1" \
     "${IMAGE_NAME}:${IMAGE_TAG}" \
     /bin/bash -c "source /opt/ros/noetic/setup.bash && source /root/catkin_ws/devel/setup.bash && source /root/shfiles/client.sh && /bin/bash"
-
-echo ""
-echo "--- Docker Ground Station Container Started ---"
-echo "VNC is available on your Mac at: 127.0.0.1:5901"
-echo "To use VNC:"
-echo "  1. Inside the container, run: /root/start_vnc.sh"
-echo "  2. On your Mac, download a VNC viewer (e.g., RealVNC, TigerVNC, or open with 'Screen Sharing')"
-echo "  3. Connect to: 127.0.0.1:5901"
-echo "  4. Then you can run: rviz, rqt, or any other GUI application"
