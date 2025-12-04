@@ -4,7 +4,7 @@ sudo chmod 777 /dev/ttyACM0 & sleep 2;
 
 echo "--- Starting RealSense Camera ---"
 # Lower the framerate to reduce power and bandwidth demand
-roslaunch realsense2_camera rs_camera.launch 
+roslaunch realsense2_camera rs_camera.launch &
 sleep 20; # Give camera time to start publishing
 
 
