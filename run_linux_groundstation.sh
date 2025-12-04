@@ -90,6 +90,7 @@ docker run -it --rm \
     --network="host" \
     --gpus all \
     --privileged \
+    --add-host ${DRONE_HOSTNAME}:${SERVER_TARGET} \
     -e DISPLAY=$DISPLAY \
     -e "QT_X11_NO_MITSHM=1" \
     -e "NVIDIA_VISIBLE_DEVICES=all" \
