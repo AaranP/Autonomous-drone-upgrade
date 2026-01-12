@@ -35,7 +35,7 @@ is_valid_ip() {
     # Allows 192.168.x.x, 10.x.x.x, 172.16-31.x.x, 100.x.x.x, and the 206.87.212/216.x range
 if [[ "$ip" =~ ^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)([0-9]{1,3}\.){1}[0-9]{1,3}$ ]] || \
        [[ "$ip" =~ ^100\.([0-9]{1,3}\.){2}[0-9]{1,3}$ ]] || \
-       [[ "$ip" =~ ^206\.87\.21[26]\.[0-9]{1,3}$ ]]; then
+       [[ "$ip" =~ ^206\.87\.21[268]\.[0-9]{1,3}$ ]]; then
         return 0 # Valid IP
     else
         return 1 # Invalid IP
@@ -304,10 +304,12 @@ docker run -it --rm \
     --name "${CONTAINER_NAME}" \
     --net=host \
     --privileged \
-    -e DISPLAY="${X_DISPLAY}" \
+    -e DISPLAY="host.docker.internal:0" \
+    -e LIBGL_ALWAYS_INDIRECT=1 \
+    -e NO_AT_BRIDGE=1 \
     -e GROUND_STATION_HOST_IP="${FINAL_GROUND_STATION_IP}" \
     -e RASPBERRY_PI_TARGET_IP="${FINAL_RASPBERRY_PI_IP}" \
-    -e GROUND_STATION_TAILSCALE_HOSTNAME="${GROUND_STATION_TAILSCALE_HOSTNAME}" \
+    -v /tmp/.X11-unix:/tmp/.X11-unix \
     ${X11_VOLUME} \
     -v "$(pwd)/shfiles:/root/shfiles" \
     --add-host "${DRONE_HOSTNAME}:${FINAL_RASPBERRY_PI_IP}" \
