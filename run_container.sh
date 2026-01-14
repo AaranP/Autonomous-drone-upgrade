@@ -107,6 +107,7 @@ docker run -it --rm \
     -v "$(pwd)/src/realflight_modules/VINS-Fusion/config:/root/catkin_ws/src/fastdrone/src/realflight_modules/VINS-Fusion/config" \
     -v "$(pwd)/src/realflight_modules/VINS-Fusion/vins_estimator/launch:/root/catkin_ws/src/fastdrone/src/realflight_modules/VINS-Fusion/vins_estimator/launch" \
     -v "$(pwd)/src/planner/plan_manage/launch:/root/catkin_ws/src/planner/plan_manage/launch" \
+    -v "$(pwd)/src/fdilink_ahrs/launch:/root/catkin_ws/src/fdilink_ahrs/launch" \
     -v "$(pwd)/shfiles:/root/shfiles" \
     -v "$(pwd)/vins_output:/root/vins_output" \
     -v "$(pwd)/src/realflight_modules/realsense-ros/realsense2_camera/launch:/root/catkin_ws/src/realflight_modules/realsense-ros/realsense2_camera/launch" \
