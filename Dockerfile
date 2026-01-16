@@ -56,6 +56,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssh-server \
     ros-noetic-ddynamic-reconfigure \
     ros-noetic-mavros \
+    nano \
+    ros-noetic-serial \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Realsense SDK from source for ARM64, as pre-built binaries are not available.
