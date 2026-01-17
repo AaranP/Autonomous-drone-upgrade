@@ -4,12 +4,14 @@ sudo chmod 777 /dev/ttyACM0 & sleep 2;
 
 echo "--- Starting RealSense Camera ---"
 # Lower the framerate to reduce power and bandwidth demand
-roslaunch realsense2_camera rs_camera.launch 
+
+roslaunch realsense2_camera rs_camera.launch & 
 sleep 5; # Give camera time to start publishing
+echo "--- Realsense Camera is running! ---"
 
-
-echo "--- Starting MAVROS ---"
-roslaunch fdilink_ahrs ahrs_data.launch & sleep 5
+echo "--- Starting FDILINK IMU ---"
+roslaunch fdilink_ahrs ahrs_data.launch &
+sleep 5
 
 #roslaunch mavros px4.launch &
 sleep 5; # Give MAVROS time to initialize and connect to FCU
