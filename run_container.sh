@@ -111,6 +111,7 @@ docker run -it --rm \
     -v "$(pwd)/shfiles:/root/shfiles" \
     -v "$(pwd)/vins_output:/root/vins_output" \
     -v "$(pwd)/src/realflight_modules/realsense-ros/realsense2_camera/launch:/root/catkin_ws/src/realflight_modules/realsense-ros/realsense2_camera/launch" \
+    -v "$(pwd)/src/fuel_planner:/root/catkin_ws/src/fuel_planner" \
     fastdrone_image_pi:latest-arm64 \
     /root/shfiles/server.sh # Execute the server setup script
     

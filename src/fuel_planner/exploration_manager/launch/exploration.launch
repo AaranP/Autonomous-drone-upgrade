@@ -12,7 +12,8 @@
   <arg name="init_z" value="1.0"/> 
 
   <!-- topic of your odometry such as VIO or LIO -->
-  <arg name="odom_topic" value="/orb_slam3/imu_pose" />
+  <!-- <arg name="odom_topic" value="/orb_slam3/imu_pose" /> REMOVED -->
+  <arg name="odom_topic" value="/vins_fusion/imu_propagate" />
 
   <!-- main algorithm params -->
   <include file="$(find exploration_manager)/launch/algorithm.xml">
@@ -30,11 +31,13 @@
 
     <arg name="odometry_topic" value="$(arg odom_topic)"/>
     <!-- sensor pose: transform of camera frame in the world frame -->
-    <arg name="sensor_pose_topic" value="/orb_slam3/imu_pose"/>
+    <!-- <arg name="sensor_pose_topic" value="/orb_slam3/imu_pose"/> REMOVED -->
+     <arg name="sensor_pose_topic" value="/vins_fusion/imu_propagate" />
     <!-- depth topic: depth image, 640x480 by default -->
     <!-- cloud topic: point cloud measurement  -->
     <!-- subscribe ONLY TO ONE of the two topics -->
-    <arg name="depth_topic" value="/depth_anything/image"/>
+    <!--<arg name="depth_topic" value="/depth_anything/image"/> REMOVED -->
+    <arg name="depth_topic" value="/camera/depth/image_rect_raw"/>
     <arg name="cloud_topic" value="nouse1"/>
 
     <!-- intrinsic params of the depth camera -->
