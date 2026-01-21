@@ -1,0 +1,4 @@
+PROBLEM_FILE = /home/raeditio/Documents/ELEC491_TL101/icon_drone/src/fuel_planner/utils/lkh_tsp_solver/resource/single.tsp
+GAIN23 = NO
+OUTPUT_TOUR_FILE =/home/raeditio/Documents/ELEC491_TL101/icon_drone/src/fuel_planner/utils/lkh_tsp_solver/resource/single.txt
+RUNS = 1
