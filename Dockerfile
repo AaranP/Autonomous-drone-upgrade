@@ -58,7 +58,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-noetic-mavros \
     nano \
     ros-noetic-serial \
+    libarmadillo-dev \
+    libdw-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Install nlopt v2.7.1
+RUN cd /root && \
+    git clone -b v2.7.1 https://github.com/stevengj/nlopt.git && \
+    cd nlopt && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make && \
+    make install
 
 # Install Realsense SDK from source for ARM64, as pre-built binaries are not available.
 # First, install build dependencies for librealsense.
@@ -90,8 +102,15 @@ RUN cd /root && \
 RUN /opt/ros/noetic/lib/mavros/install_geographiclib_datasets.sh
 
 # --- CORRECTED ---
-# Copy only the 'src' directory from your project into the workspace 'src' folder
+# Copy all project files into the workspace 'src' folder
 COPY src/ /root/catkin_ws/src/
+
+# Remove conflicting utility packages from uav_simulator/Utils if src/utils is preferred
+RUN rm -rf /root/catkin_ws/src/uav_simulator/Utils/cmake_utils \
+    /root/catkin_ws/src/uav_simulator/Utils/pose_utils \
+    /root/catkin_ws/src/uav_simulator/Utils/quadrotor_msgs \
+    /root/catkin_ws/src/uav_simulator/Utils/rviz_plugins \
+    /root/catkin_ws/src/uav_simulator/Utils/uav_utils
 
 # Build the entire catkin workspace
 WORKDIR /root/catkin_ws
