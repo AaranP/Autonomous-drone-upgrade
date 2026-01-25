@@ -9,6 +9,11 @@ roslaunch realsense2_camera rs_camera.launch &
 sleep 5; # Give camera time to start publishing
 echo "--- Realsense Camera is running! ---"
 
+echo "--- Compress Camera Images ---"
+rosrun image_transport republish raw in:=/camera/depth/image_rect_raw compressedDepth out:=/depth_image &
+sleep 1;
+echo "--- Images Compressed! ---"
+
 echo "--- Starting FDILINK IMU ---"
 roslaunch fdilink_ahrs ahrs_data.launch &
 sleep 5
