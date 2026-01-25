@@ -1,16 +1,10 @@
-# ...existing code...
 # Launch VINS and FUEL in parallel
 echo "--- Starting FUEL ---"
 
-# 1. Decompress the depth image from the drone for local processing
-# This takes /camera/depth/image_rect_raw/compressed and turns it into /camera/depth/image_rect_raw locally
-rosrun image_transport republish compressedDepth in:=/depth_image raw out:=/depth_image_out & sleep 2
+# 1. Decompress from the standard RealSense compressed topic
+rosrun image_transport republish compressedDepth in:=/camera/depth/image_rect_raw raw out:=/camera/depth/decompressed & 
+sleep 2
 
-#rosrun image_transport republish compressed in:=/image2 raw out:=/vins/image2 & sleep 2
-
-# 2. Decompress VINS tracking image (optional, only if you want to view it with rqt_image_view or other tools)
-# rosrun image_transport republish compressed in:=/vins_fusion/image_track raw out:=/vins_fusion/image_track &
-
-#Run simulation 
-roslaunch exploration_manager exploration.launch & sleep 2
-# ...existing code...
+# 2. Launch exploration, telling it to use the DECOMPRESSED topic
+roslaunch exploration_manager exploration.launch depth_topic:=/camera/depth/decompressed & 
+sleep 2
