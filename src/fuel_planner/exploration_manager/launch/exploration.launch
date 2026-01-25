@@ -13,8 +13,8 @@
 
   <!-- topic of your odometry such as VIO or LIO -->
   <!-- <arg name="odom_topic" value="/orb_slam3/imu_pose" /> REMOVED -->
-  <arg name="odom_topic" value="/vins_fusion/imu_propagate" />
-
+  <arg name="odom_topic" value="/vins_fusion/imu_propagate" /> 
+  <!--<arg name="odom_topic" value="/state_ukf/odom" /> -->
   <!-- main algorithm params -->
   <include file="$(find exploration_manager)/launch/algorithm.xml">
 
@@ -37,7 +37,7 @@
     <!-- cloud topic: point cloud measurement  -->
     <!-- subscribe ONLY TO ONE of the two topics -->
     <!--<arg name="depth_topic" value="/depth_anything/image"/> REMOVED -->
-    <arg name="depth_topic" value="/camera/depth/image_rect_raw"/>
+    <arg name="depth_topic" value="/depth_image_out"/>
     <arg name="cloud_topic" value="nouse1"/>
 
     <!-- intrinsic params of the depth camera -->
@@ -79,7 +79,7 @@
   </node>
 
   <!-- use simulator -->
-    <!--include file="$(find exploration_manager)/launch/simulator.xml">
+   <!--- <include file="$(find exploration_manager)/launch/simulator.xml"> 
     <arg name="map_size_x_" value="$(arg map_size_x)"/>
     <arg name="map_size_y_" value="$(arg map_size_y)"/>
     <arg name="map_size_z_" value="$(arg map_size_z)"/>

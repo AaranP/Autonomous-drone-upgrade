@@ -90,18 +90,14 @@ docker run -it --rm \
     --network="host" \
     --gpus all \
     --privileged \
-    -e DISPLAY=$DISPLAY \
-    -e "QT_X11_NO_MITSHM=1" \
-    -e "NVIDIA_VISIBLE_DEVICES=all" \
-    -e "NVIDIA_DRIVER_CAPABILITIES=all" \
-    -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+    -v /home/arunark/kw076/Autonomous-drone-upgrade/src/fuel_planner/exploration_manager/launch/exploration.launch:/root/catkin_ws/src/fuel_planner/exploration_manager/launch/exploration.launch \
+    -v "$(pwd)/shfiles:/root/shfiles" \
     -e GROUND_STATION_HOST_IP=$GROUNDSTATION_IP \
     -e RASPBERRY_PI_TARGET_IP=$SERVER_TARGET \
     -e ROS_CONNECTION_TYPE=$ROS_CONNECTION_TYPE \
     $IMAGE_NAME:$IMAGE_TAG \
-    /bin/bash /root/shfiles/client_linux.sh
-
-# --- Cleanup ---
+    /bin/bash /root/shfiles/client_linux.sh \
+    
 # This will run after the container is stopped.
 echo "Container stopped. Disabling X11 forwarding for local docker containers."
 xhost -local:docker
