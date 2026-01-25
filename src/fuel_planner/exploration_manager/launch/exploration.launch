@@ -37,7 +37,7 @@
     <!-- cloud topic: point cloud measurement  -->
     <!-- subscribe ONLY TO ONE of the two topics -->
     <!--<arg name="depth_topic" value="/depth_anything/image"/> REMOVED -->
-    <arg name="depth_topic" default="/camera/depth/image_rect_raw"/>
+    <arg name="depth_topic" value="/camera/depth/decompressed"/>
     <arg name="cloud_topic" value="nouse1"/>
 
     <!-- intrinsic params of the depth camera -->
