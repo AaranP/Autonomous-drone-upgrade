@@ -10,9 +10,9 @@ sleep 5; # Give camera time to start publishing
 echo "--- Realsense Camera is running! ---"
 
 
-echo "--- Starting FDILINK IMU ---"
-roslaunch fdilink_ahrs ahrs_data.launch &
-sleep 5
+#echo "--- Starting FDILINK IMU ---"
+#roslaunch fdilink_ahrs ahrs_data.launch &
+sleep 5;
 
 #roslaunch mavros px4.launch &
 sleep 5; # Give MAVROS time to initialize and connect to FCU
