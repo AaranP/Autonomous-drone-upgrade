@@ -1,0 +1,13 @@
+<launch>
+  <arg name="input_topic" default="/vins_fusion/odometry"/>
+  <arg name="output_topic" default="/vins_fusion/odometry_200hz"/>
+  <arg name="rate" default="200"/>
+  <arg name="max_extrapolation" default="0.05"/>
+
+  <node pkg="odom_interpolator" type="odom_interpolator_node" name="odom_interpolator" output="screen">
+    <param name="input_topic" value="$(arg input_topic)"/>
+    <param name="output_topic" value="$(arg output_topic)"/>
+    <param name="target_rate" value="$(arg rate)"/>
+    <param name="max_extrapolation" value="$(arg max_extrapolation)"/>
+  </node>
+</launch>

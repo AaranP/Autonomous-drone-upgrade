@@ -103,16 +103,17 @@ docker run -it --rm \
     -e ROS_MASTER_URI="http://${DRONE_ROS_IP}:11311" \
     -e ROS_IP="${DRONE_ROS_IP}" \
     -v /dev:/dev \
-    -v "$(pwd)/src/fastdrone/config:/root/catkin_ws/src/config" \
-    -v "$(pwd)/src/realflight_modules/VINS-Fusion/config:/root/catkin_ws/src/realflight_modules/VINS-Fusion/config" \
-    -v "$(pwd)/src/realflight_modules/VINS-Fusion/vins_estimator/launch:/root/catkin_ws/src/realflight_modules/VINS-Fusion/vins_estimator/launch" \
-    -v "$(pwd)/src/fdilink_ahrs:/root/catkin_ws/src/fdilink_ahrs" \
+    -v "$(pwd)/src/fastdrone/config:/root/catkin_ws/src/fastdrone/config" \
+    -v "$(pwd)/src/realflight_modules/VINS-Fusion/config:/root/catkin_ws/src/fastdrone/src/realflight_modules/VINS-Fusion/config" \
+    -v "$(pwd)/src/realflight_modules/VINS-Fusion/vins_estimator/launch:/root/catkin_ws/src/fastdrone/src/realflight_modules/VINS-Fusion/vins_estimator/launch" \
+    -v "$(pwd)/src/planner/plan_manage/launch:/root/catkin_ws/src/planner/plan_manage/launch" \
     -v "$(pwd)/shfiles:/root/shfiles" \
     -v "$(pwd)/vins_output:/root/vins_output" \
     -v "$(pwd)/src/realflight_modules/realsense-ros/realsense2_camera/launch:/root/catkin_ws/src/realflight_modules/realsense-ros/realsense2_camera/launch" \
-    -v "$(pwd)/src/fuel_planner:/root/catkin_ws/src/fuel_planner" \
     fastdrone_image_pi:latest-arm64 \
+    -v "$(pwd)/src/utils/odom_interpolator/launch:/root/catkin_ws/src/utils/odom_utils/launch" \
     /root/shfiles/server.sh # Execute the server setup script
+    
     
 #Opens another terminal in the docker session (this line will only run if the above docker run command exits)
 #docker exec -it fast_drone_container /bin/bash
