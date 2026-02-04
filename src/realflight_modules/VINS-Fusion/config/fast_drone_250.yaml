@@ -26,22 +26,33 @@ image_height: 480
 estimate_extrinsic: 1   # 0  Have an accurate extrinsic parameters. We will trust the following imu^R_cam, imu^T_cam, don't change it.
                         # 1  Have an initial guess about extrinsic parameters. We will optimize around your initial guess.
 
+
+
+###################
 body_T_cam0: !!opencv-matrix
    rows: 4
    cols: 4
    dt: d
-   data: [  0,0,1,0.051,
-            -1,0,0,-0.04,
-            0,-1,0,0,
-            0., 0., 0., 1. ]
+   data: [ -5.1421876916671438e-02, 7.9559693735666431e-02,
+       9.9550291094855858e-01, 3.6086544025297880e-02,
+       -9.9859793238691419e-01, -1.6641069012017340e-02,
+       -5.0251808472107258e-02, 1.1168351973670146e-02,
+       1.2568214151054706e-02, -9.9669119086847768e-01,
+       8.0303860668270333e-02, 6.2734800934033776e-03, 0., 0., 0., 1. ]
 body_T_cam1: !!opencv-matrix
    rows: 4
    cols: 4
    dt: d
-   data: [ 0,0,1,0.051,
-           -1,0,0,0.011,
-           0,-1,0,0,
-           0., 0., 0., 1. ]
+   data: [ -4.7999569533199393e-02, 8.0727484050370654e-02,
+       9.9557978818551995e-01, 3.0543363458669020e-02,
+       -9.9876430841980468e-01, -1.6731835243762871e-02,
+       -4.6796387852962563e-02, -4.1697558770202550e-02,
+       1.2880122333925454e-02, -9.9659576509649728e-01,
+       8.1430850667240318e-02, 5.4791735007463961e-03, 0., 0., 0., 1. ]
+
+
+##################
+
 #Multiple thread support
 multiple_thread: 1
 
@@ -50,8 +61,7 @@ max_cnt: 150            # max feature number in feature tracking
 min_dist: 30            # min distance between two features 
 freq: 10                # frequence (Hz) of publish tracking result. At least 10Hz for good estimation. If set 0, the frequence will be same as raw image 
 F_threshold: 1.0        # ransac threshold (pixel)
-show_track: 1           # publish tracking image as topic
-flow_back: 1            # perform forward and backward optical flow to improve feature tracking accuracy
+show_track: 1           # publish tracking image as topicflow_back: 1            # perform forward and backward optical flow to improve feature tracking accuracy
 
 #optimization parameters
 max_solver_time: 0.04  # max solver itration time (ms), to guarantee real time
