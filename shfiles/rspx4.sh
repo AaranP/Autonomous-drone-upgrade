@@ -16,6 +16,8 @@ sleep 5
 
 roslaunch mavros px4.launch &
 sleep 5; # Give MAVROS time to initialize and connect to FCU
+roslaunch px4ctrl run_ctrl.launch & 
+sleep 5; # Give PX4CTRL time to start
 
 
 echo "--- Starting VINS-Fusion ---"
