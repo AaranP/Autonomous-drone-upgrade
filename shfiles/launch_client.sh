@@ -4,9 +4,9 @@
 sudo systemctl restart chrony
 sleep 2
 
-rosrun image_transport republish compressesd in:=/camera/infra1/image_rect_raw out:=/camera/infra1/image_rect_raw_decompressed &
+rosrun image_transport republish compressed in:=/camera/infra1/image_rect_raw raw out:=/camera/infra1/image_rect_raw_decompressed &
 sleep 1
-rosrun image_transport republish compressesd in:=/camera/infra2/image_rect_raw out:=/camera/infra2/image_rect_raw &
+rosrun image_transport republish compressed in:=/camera/infra2/image_rect_raw raw out:=/camera/infra2/image_rect_raw_decompressed &
 sleep 1
 
 
