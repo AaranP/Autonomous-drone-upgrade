@@ -112,6 +112,7 @@ docker run -it --rm \
     -v "$(pwd)/src/realflight_modules/realsense-ros/realsense2_camera/launch:/root/catkin_ws/src/realflight_modules/realsense-ros/realsense2_camera/launch" \
     -v "$(pwd)/src/fuel_planner:/root/catkin_ws/src/fuel_planner" \
     -v "$(pwd)/src/realflight_modules/px4ctrl/config:/root/catkin_ws/src/realflight_modules/px4ctrl/config" \
+    -v "$(pwd)/src/realflight_modules/px4ctrl/launch:/root/catkin_ws/src/realflight_modules/px4ctrl/launch" \
     fastdrone_image_pi:latest-arm64 \
     /root/shfiles/server.sh # Execute the server setup script
     

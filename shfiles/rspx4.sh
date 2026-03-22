@@ -14,9 +14,11 @@ echo "--- Starting FDILINK IMU ---"
 roslaunch fdilink_ahrs ahrs_data.launch &
 sleep 5
 
-roslaunch mavros px4.launch &
+# roslaunch mavros px4.launch &
+roslaunch mavros px4.launch fcu_url:="/dev/ttyACM0:921600" gcs_url:="udp://@192.168.0.231:14550" &
 sleep 5; # Give MAVROS time to initialize and connect to FCU
 roslaunch px4ctrl run_ctrl.launch & 
+
 sleep 5; # Give PX4CTRL time to start
 
 
