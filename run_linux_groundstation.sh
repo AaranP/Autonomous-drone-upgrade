@@ -91,6 +91,9 @@ docker run -it --rm \
     --gpus all \
     --privileged \
     -v /home/arunark/kw076/Autonomous-drone-upgrade/src/fuel_planner/exploration_manager/launch/exploration.launch:/root/catkin_ws/src/fuel_planner/exploration_manager/launch/exploration.launch \
+    -v "$(pwd)/src/realflight_modules/VINS-Fusion/config:/root/catkin_ws/src/realflight_modules/VINS-Fusion/config" \
+    -v "$(pwd)/src/realflight_modules/VINS-Fusion/vins_estimator/launch:/root/catkin_ws/src/fastdrone/src/realflight_modules/VINS-Fusion/vins_estimator/launch" \
+    -v "$(pwd)/vins_output:/root/vins_output" \
     -v "$(pwd)/shfiles:/root/shfiles" \
     -e GROUND_STATION_HOST_IP=$GROUNDSTATION_IP \
     -e RASPBERRY_PI_TARGET_IP=$SERVER_TARGET \
