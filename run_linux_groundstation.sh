@@ -90,6 +90,10 @@ docker run -it --rm \
     --network="host" \
     --gpus all \
     --privileged \
+    -e DISPLAY=$DISPLAY \
+    -e QT_X11_NO_MITSHM=1 \
+    -v "NVIDIA_VISIBLE_DEVICES=all" \
+    -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
     -v /home/arunark/kw076/Autonomous-drone-upgrade/src/fuel_planner/exploration_manager/launch/exploration.launch:/root/catkin_ws/src/fuel_planner/exploration_manager/launch/exploration.launch \
     -v "$(pwd)/src/realflight_modules/VINS-Fusion/config:/root/catkin_ws/src/realflight_modules/VINS-Fusion/config" \
     -v "$(pwd)/src/realflight_modules/VINS-Fusion/vins_estimator/launch:/root/catkin_ws/src/fastdrone/src/realflight_modules/VINS-Fusion/vins_estimator/launch" \
