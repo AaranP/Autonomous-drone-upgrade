@@ -1,0 +1,4 @@
+terminate called after throwing an instance of 'image_transport::TransportLoadException'
+  what():  Unable to load plugin for transport 'compressesd', error string:
+According to the loaded plugin descriptions the class image_transport/compressesd_sub with base class type image_transport::SubscriberPlugin does not exist. Declared types are  image_transport/compressedDepth_sub image_transport/compressed_sub image_transport/raw_sub image_transport/theora_sub
+Aborted (core dumped)
