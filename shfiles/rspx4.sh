@@ -12,20 +12,21 @@ echo "--- Realsense Camera is running! ---"
 
 echo "--- Starting FDILINK IMU ---"
 roslaunch fdilink_ahrs ahrs_data.launch &
+echo "--- External IMU is running! ---"
 sleep 5
 
 roslaunch mavros px4.launch &
 sleep 5; # Give MAVROS time to initialize and connect to FCU
 roslaunch px4ctrl run_ctrl.launch & 
+echo "--- PX4CTRL is running! ---"
 sleep 5; # Give PX4CTRL time to start
 
+# echo "--- Starting VINS-Fusion ---"
+# mkdir -p /root/vins_output/pose_graph # Ensure the output directories exist
+# chmod -R 777 /root/vins_output
 
-echo "--- Starting VINS-Fusion ---"
-mkdir -p /root/vins_output/pose_graph # Ensure the output directories exist
-chmod -R 777 /root/vins_output
-
-roslaunch vins fast_drone_250.launch &
-sleep 10; # Give VINS time to start processing
+# roslaunch vins fast_drone_250.launch &
+# sleep 10; # Give VINS time to start processing
 
 echo "All processes started."
 wait;
