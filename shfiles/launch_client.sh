@@ -1,8 +1,6 @@
 # Launch VINS and then FUEL
 
 #sync clocks
-sudo systemctl restart chrony
-sleep 2
 
 rosrun image_transport republish compressed in:=/camera/infra1/image_rect_raw raw out:=/camera/infra1/image_rect_raw_decompressed &
 sleep 1
@@ -18,10 +16,11 @@ roslaunch vins fast_drone_250.launch &
 sleep 10; # Give VINS time to start processing
 
 echo "--- Starting FUEL ---"
-
-# 1. Decompress from the standard RealSense compressed topic
+ #1. Decompress from the standard RealSense compressed topic
 rosrun image_transport republish compressedDepth in:=/camera/depth/image_rect_raw raw out:=/camera/depth/decompressed & 
 sleep 2
 
-# 2. Launch exploration, telling it to use the DECOMPRESSED topic
-roslaunch exploration_manager exploration.launch
+#2. Launch exploration, telling it to use the DECOMPRESSED topic
+roslaunch exploration_manager exploration.launch rviz:=false & sleep 2
+#launch rviz for vins
+roslaunch vins rviz.launch
