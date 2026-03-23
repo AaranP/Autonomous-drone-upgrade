@@ -31,43 +31,42 @@ estimate_extrinsic: 1   # 0  Have an accurate extrinsic parameters. We will trus
 ###################
 
 ##################
-
 body_T_cam0: !!opencv-matrix
    rows: 4
    cols: 4
    dt: d
-   data: [ -1.8889734226445576e-02, 6.1102467685002508e-04,
-       9.9982138634343032e-01, 4.7899886801175288e-02,
-       -9.9979375030940976e-01, -7.4717463173563647e-03,
-       -1.8884645858876524e-02, 3.4686369182464882e-03,
-       7.4588727767920717e-03, -9.9997189943308595e-01,
-       7.5203795534151130e-04, -2.5839293412722911e-02, 0., 0., 0., 1. ]
+   data: [ -1.8375934309076136e-03, 1.4588632080426212e-02,
+       9.9989189168849879e-01, 4.3933840324866962e-02,
+       -9.9999389799101079e-01, -2.9975623910449833e-03,
+       -1.7940458343009835e-03, -3.7259115901516836e-02,
+       2.9710656550242520e-03, -9.9988908706602742e-01,
+       1.4594051361420668e-02, 2.4957064304137300e-02, 0., 0., 0., 1. ]
 body_T_cam1: !!opencv-matrix
    rows: 4
    cols: 4
    dt: d
-   data: [ -1.6106941316206935e-02, 1.4003675549249970e-03,
-       9.9986929416406611e-01, 4.6487953655791031e-02,
-       -9.9984248287738620e-01, -7.4784407132229003e-03,
-       -1.6096035477192606e-02, -4.6703066070665197e-02,
-       7.4549228715326031e-03, -9.9997105552871401e-01,
-       1.5206017787614545e-03, -2.5604749693028301e-02, 0., 0., 0., 1. ]
+   data: [ 1.0015209964142624e-03, 1.5964953910744928e-02,
+       9.9987205041561289e-01, 4.4049737157126706e-02,
+       -9.9999417650104472e-01, -3.2460987367852745e-03,
+       1.0534737723118526e-03, -8.3320984770348425e-02,
+       3.2625020600220989e-03, -9.9986728273787384e-01,
+       1.5961609902810925e-02, 2.3624893078856971e-02, 0., 0., 0., 1. ]
 
 #Multiple thread support
 multiple_thread: 1
 
 #feature traker paprameters
-max_cnt: 100            # max feature number in feature tracking
-min_dist: 30            # min distance between two features 
+max_cnt: 220            # max feature number in feature tracking
+min_dist: 18            # min distance between two features 
 freq: 30                # frequence (Hz) of publish tracking result. At least 10Hz for good estimation. If set 0, the frequence will be same as raw image 
 F_threshold: 1.0        # ransac threshold (pixel)
-show_track: 0           # publish tracking image as topic
+show_track: 1           # publish tracking image as topic
 flow_back: 1            # perform forward and backward optical flow to improve feature tracking accuracy
 
 #optimization parameters
-max_solver_time: 0.02  # max solver itration time (ms), to guarantee real time
-max_num_iterations: 8   # max solver itrations, to guarantee real time
-keyframe_parallax: 10.0 # keyframe selection threshold (pixel)
+max_solver_time: 0.06  # max solver itration time (ms), to guarantee real time
+max_num_iterations: 18   # max solver itrations, to guarantee real time
+keyframe_parallax: 6.0 # keyframe selection threshold (pixel)
 
 #imu parameters       The more accurate parameters you provide, the better performance
 acc_n: 0.1          # accelerometer measurement noise standard deviation. #0.2   0.04
