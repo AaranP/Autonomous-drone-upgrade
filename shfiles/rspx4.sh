@@ -17,6 +17,11 @@ sleep 5
 
 roslaunch mavros px4.launch &
 sleep 5; # Give MAVROS time to initialize and connect to FCU
+
+echo "--- Setting HIGHRES_IMU and ATTITUDE_QUATERNION to 200Hz ---"
+rosservice call /mavros/set_message_interval 105 200.0
+rosservice call /mavros/set_message_interval 31 200.0
+
 roslaunch px4ctrl run_ctrl.launch & 
 echo "--- PX4CTRL is running! ---"
 sleep 5; # Give PX4CTRL time to start

@@ -13,7 +13,7 @@ mkdir -p /root/vins_output/pose_graph # Ensure the output directories exist
 chmod -R 777 /root/vins_output
 
 roslaunch vins fast_drone_250.launch &
-sleep 10; # Give VINS time to start processing
+sleep 5; # Give VINS time to start processing
 
 echo "--- Starting FUEL ---"
  #1. Decompress from the standard RealSense compressed topic
