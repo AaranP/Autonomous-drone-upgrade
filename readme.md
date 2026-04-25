@@ -1,222 +1,246 @@
-<font size=6> **Build an autonomous aerial robot from scratch** </font>
+# Autonomous Drone V3 — Team KW-076
 
-This is a companion document to the video [Build an autonomous aerial robot from scratch](https://www.bilibili.com/video/BV1WZ4y167me?p=1). 
-Operating aerial robots is risky! Please strictly abide by the safety regulations! ! !
+An autonomous indoor mapping quadrotor built for ICON Labs. The drone navigates and generates a 3D occupancy map without human input, using VINS-Fusion for visual-inertial odometry and FUEL for exploration planning. All software runs in Docker containers for reproducibility.
 
-[TOC]
+---
 
-## Chapter 1: Course Introduction
-  This course is a set of free courses for students, enthusiasts, and related practitioners who are interested in autonomous aerial robots. It includes a complete set of detailed procedures from hardware assembly, airborne computer environment setting, code deployment, and real machine experiments. Assemble your own autonomous drone from, and make it explore autonomously and keep away from obstacles in an unknown environment. All code and hardware design involved in this course are all open source,<font color="#dd0000">Commercial use and reprinting are strictly prohibited. The copyright and final interpretation rights are reserved by FAST-LAB, Zhejiang University.</font>
-  The focus of this course is mainly on the assembly, code deployment and debugging of autonomous aerial robots. Some theoretical foundations of autonomous aerial robots, such as dynamic model, path search, trajectory planning, mapping, etc., are taught by Fei Gao in Shenlan College [course] (https://www.shenlanxueyuan.com/course/385?source=1), which will not be repeated in this course.
+## Table of Contents
+1. [Overview](#overview)
+2. [Hardware](#hardware)
+3. [Prerequisites](#prerequisites)
+4. [Setup — Raspberry Pi (Drone)](#setup--raspberry-pi-drone)
+5. [Setup — Ground Station (Linux PC)](#setup--ground-station-linux-pc)
+6. [Launching the System](#launching-the-system)
+7. [Networking Options](#networking-options)
+8. [Parameter Modification](#parameter-modification)
+9. [Building Images from Source](#building-images-from-source)
+10. [Reference Files](#reference-files)
 
-## Chapter 2: Drone Assembly
-  For details about the accessories and welding tools of the aerial body, please refer to [purchase_list.xlsx](purchase_list.xlsx). If you have any questions about hardware, please refer to Extra 1: Hardware Selection.
+---
 
-## Chapter 3: Installation and wiring of flight controller
-* Be sure to pay attention to the order of the ESC signal lines! ! !
-  <img src="images\电机方向.jpg" alt="电机方向" style="zoom: 15%;" />
-* If the arrow of the flight controller is in the same direction as the aircraft, the flight controller is forward. If rotating a multiple of 90° in any direction, you can also adjust the parameters in the flight control settings later. It is recommended to place the controller in the same orientation as in the video.
-* <font color="#dd0000">It is strongly recommended to use silicone DuPont wire. Conventional DuPont wire is too hard and is prone to poor contact.</font>
-* Note that the surface of the 5V voltage regulator module should be covered with black tape for insulation. Stick a thick sponge tape around it to prevent damage to the 5V module when landing. You can also consider sticking it to the arm or else places. 
+## Overview
 
-## Chapter 4: Setup and flight test of flight controller
+![Drone V3](pictures/drone%20image.jpg)
+*Drone V3 — autonomous indoor mapping quadrotor (241 mm span, 138 mm height)*
 
-* Please burn the firmware under this git project `/firmware/px4_fmu-v5_default.px4`，This firmware is compiled from the official v1.11.0 px4 firmware. You can compile it yourself if necessary. Firmware v1.13 is not suitable for this project. The older firmware version has not been tested.
+```
+┌──────────────────────────────────────────┐   WiFi / Tailscale    ┌──────────────────────────────┐
+│         Raspberry Pi 5 (Onboard)         │◄─────────────────────►│   Ground Station PC (x86)    │
+│                                          │                        │                              │
+│  Docker: fastdrone_image_pi              │                        │  Docker: fastdrone_gs        │
+│  ├─ roscore  ← ROS Master lives here     │                        │  ├─ VINS-Fusion (odometry)   │
+│  ├─ realsense_ros  (D435i, 30 Hz)        │                        │  ├─ FUEL exploration planner │
+│  ├─ wheeltec_n100_ros  (IMU, 200 Hz)     │                        │  └─ Rviz visualisation       │
+│  ├─ MAVROS  (ROS ↔ MAVLink bridge)       │                        │                              │
+│  └─ PX4 controller (Kakute H7 Mini)      │                        │                              │
+└──────────────────────────────────────────┘                        └──────────────────────────────┘
+```
 
-* Create `/etc/extras.txt` in the root directory of the flight controller's sd card. Write in
+The ROS Master runs **onboard** the Pi 5, eliminating the WiFi round-trip latency that made the previous generation unstable. VINS-Fusion and FUEL run on the ground station PC and connect to the Pi's ROS network over the same WiFi link, subscribing to sensor topics and publishing trajectory setpoints back to MAVROS.
 
-  ```
-  mavlink stream -d /dev/ttyACM0 -s ATTITUDE_QUATERNION -r 200
-  mavlink stream -d /dev/ttyACM0 -s HIGHRES_IMU -r 200
-  ```
-  
-  to increase the frequency of IMU.
-  
-* Modify the Airframe to `Generic 250 Racer`，Refers to the 250mm wheelbase model. Please select the type according to the actual wheelbase.
+- **Odometry:** VINS-Fusion — stereo infrared + IMU visual-inertial fusion
+- **Exploration:** FUEL (Fast UAV Exploration) — hierarchical 3D frontier planning
+- **Operating environment:** 10 m × 10 m × 3 m indoor space
 
-  Modify the following parameters.
+---
 
-* `dshot_config`: dshot600
+## Hardware
 
-* `CBRK_SUPPLY_CHK`: 894281
+| Component | Model | Key Spec |
+|-----------|-------|----------|
+| Onboard Computer | Raspberry Pi 5 | 16 GB RAM |
+| Flight Controller | Holybro Kakute H7 Mini | PX4 firmware, 1 kHz attitude loop |
+| Stereo Depth Camera | Intel RealSense D435i | 0.2–10 m range, USB 3.0 |
+| IMU | WHEELTEC N100 | 200 Hz, 0.1° RMS, USB-C |
+| Motor Controller (ESC) | HAKRC BLHeli_32 45A | DShot600 protocol |
+| Motors (×4) | VCI Spark 1404 3750KV | 3.5-inch propellers |
+| Battery | Melasta 4S 14.8V 2200mAh 50C | ≥5 min flight time |
+| BMS / Power Module | CRIUS 28V 90A | 5V regulated output for Pi 5 |
+| RC Receiver | ELRS Receiver | Connected to Kakute H7 Mini |
+| Frame | Custom (carbon fiber + PLA+ arms) | 241 mm span, 138 mm height |
 
-* `CBRK_USB_CHK`: 197848
+**Frame layout:**
+- *Lower half:* 4 propeller guards with integrated landing legs; ESC mounted under central plate
+- *Upper half:* Pi 5 in protective cage, Kakute H7 Mini, N100 IMU, and D435i — all mounted close to centre to minimise vibration coupling
 
-* `CBRK_IO_SAFETY`: 22027
+![Hardware Wiring Diagram](pictures/hardwarewiring.png)
+*Full wiring diagram showing power and signal connections between all onboard components*
 
-* `SER_TEL1_BAUD`: 921600
+![Hover Test](pictures/hover_test.gif)
+*Drone V3 in stable hover — demonstrating the closed-loop flight control achieved with the Pi 5 onboard ROS Master architecture*
 
-* `SYS_USE_IO`: 0（No set if not found）
+---
 
-* <font color="#dd0000">Make sure the propeller is not installed before checking the rotation of the motor! ! !</font>
+## Prerequisites
 
-* Modify the rotation direction of the motor. Enter the mavlink console.
+### Ground Station PC (Linux)
 
-  ```
-  dshot reverse -m 1
-  dshot save -m 1
-  ```
+Install Docker Engine following the official guide for your distro:
+https://docs.docker.com/engine/install/
 
-  `1` is the number of the motor that needs to be reversed
-  
-* <font color="#dd0000">For the first test flight, please be sure to seek the assistance of a pilot who has flying experience in the self-stabilizing mode. 99% of pilots who have only flown DJI cannot fly well!</font>
+### Raspberry Pi 5 (Drone)
 
-## Chapter 5: Assembly of Onboard Computer and Sensors
+No manual install needed — just pull the pre-built Docker image as described below. Any Linux OS works as long as Docker is installed.
 
-* The carbon plate has reserved the installation hole for NUC that has removed the shell . If you want to remove the shell, you need to buy an additional USB network card, or remove the network card antenna and find a place to fix it. Because the carbon fiber board is conductive, please be sure to support the NUC with nylon column.
-* The NUC uses the 4S aircraft battery to directly supply power, and there is no problem under normal circumstances. But it is better to connect a voltage stabilizing module. Please choose it as appropriate.
+---
 
-## Chapter 6: Installation of ubuntu20 04 
+## Setup — Raspberry Pi (Drone)
 
-* Address of the mirror station：`http://mirrors.aliyun.com/ubuntu-releases/20.04/`. Download  `ubuntu-20.04.4-desktop-amd64.iso`
-* UltraISO for burning：`https://cn.ultraiso.net/`
-* Disk Partitioning：
-  * EFI 512M
-  * swap area 16000M（twice the memory size）
-  * mount point `/` all capacity remaining
-  * <font color="#dd0000">Ubuntu also needs to be installed on the PC or notebook. It is recommended to install ubuntu 20.04 virtual machine or dual system. Dual system is better if there is a long-term learning plan</font>
+**1. Pull the pre-built image**
 
-## Chapter 7: Environmental Configuration of the Airborne Computer
+```bash
+docker pull ghcr.io/aaranp/autonomous-drone-upgrade/fastdrone_image_pi:latest-arm64
+```
 
-* ROS installation
-  * `sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'`
-  * `sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654'`
-  * `sudo apt update`
-  * `sudo apt install ros-noetic-desktop-full`
-  * `echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc`
-  * <font color="#dd0000">It is recommended that students who do not know ROS first learn the ROS introductory tutorial by Guyueju in Bilibili.</font>
-* ROS test
-  * Open three terminals and enter
-  * `roscore`
-  * `rosrun turtlesim turtlesim_node`
-  * `rosrun turtlesim turtle_teleop_key`
-* realsense driver installation
-  * `sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key  F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE || sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key  F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE`
-  * `sudo add-apt-repository "deb https://librealsense.intel.com/Debian/apt-repo $(lsb_release -cs) main" -u`
-  * `sudo apt-get install librealsense2-dkms`
-  * `sudo apt-get install librealsense2-utils`
-  * `sudo apt-get install librealsense2-dev`
-  * `sudo apt-get install librealsense2-dbg`
-  * test：`realsense-viewer`
-  * <font color="#dd0000">Note that the connected USB port must be 3.x (blue).</font>
-* mavros installation
-  * `sudo apt-get install ros-noetic-mavros`
-  * `cd /opt/ros/noetic/lib/mavros`
-  * `sudo ./install_geographiclib_datasets.sh`
-* installation of ceres, glog and ddyanmic-reconfigure
-  * unzip`3rd_party.zip`
-  * Open the terminal and enter the ./glog
-  * `./autogen.sh && ./configure && make && sudo make install`
-  * `sudo apt-get install liblapack-dev libsuitesparse-dev libcxsparse3.1.2 libgflags-dev libgoogle-glog-dev libgtest-dev`
-  * Open the terminal and enter the ./ceres
-  * `mkdir build`
-  * `cd build`
-  * `cmake ..`
-  * `sudo make -j4`
-  * `sudo make install`
-  * `sudo apt-get install ros-noetic-ddynamic-reconfigure`
-* Download ego-planner code and compile
-  * `git clone https://github.com/ZJU-FAST-Lab/Fast-Drone-250`
-  * `cd Fast-Drone-250`
-  * `catkin_make`
-  * `source devel/setup.bash`
-  * `roslaunch ego_planner single_run_in_sim.launch`
-  * Press the G key on the keyboard in Rviz, then click the left button of mouse to select the target point of the drone
+**2. Clone the repo onto the Pi**
 
-## Chapter 8: Installation and Instructions of Experiment and Debugging Software 
+```bash
+git clone https://github.com/AaranP/Autonomous-drone-upgrade.git
+cd Autonomous-drone-upgrade
+```
 
-* VScode：`sudo dpkg --i ***.deb`
-* Terminator：`sudo apt install terminator`
-* Plotjuggler：
-  * `sudo apt install ros-noetic-plotjuggler`
-  * `sudo apt install ros-noetic-plotjuggler-ros`
-  * `rosrun plotjuggler plotjugller`
-* Net-tools：
-  * `sudo apt install net-tools`
-  * `ifconfig`
-* ssh：
-  * `sudo apt install openssh-server`
-  * PC/notebook：`ping 192.168.**.**`
-  * `sudo gedit /etc/hosts`
-  * add at the end：`192.168.**.** fast-drone`
-  * `ping fast-drone`
-  * `ssh fast-drone@fast-drone`(`ssh username@alias`)
+**3. Start the drone container**
 
-## Chapter 9: Instructions of Ego-Planner
-* `src/planner/plan_manage/launch/single_run_in_exp.launch`：
-  * `map_size`：When your map is large, it needs to be modified. Note that the target point should not exceed the map_ size/2
-  * `fx/fy/cx/cy`：Actual internal parameters of your depth camera
-  * `max_vel/max_acc`：Max speed and acceleration. It is recommended to use 0.5 for test first. The maximum speed should not exceed 2.5. The acceleration should not exceed 6
-  * `flight_type`：1 represents rviz point selection mode, 2 represents waypoints tracking mode.
-* `src/planner/plan_manage/launch/advanced_param_exp.xml`下的：
-  * `resolution`：Represents the resolution of the grid points of the raster map, in meters. The smaller the map, the finer the map, but the more memory it takes up. The minimum should not be lower than 0.1
-  * `obstacles_inflation`：Represents the expansion size of the obstacle, in meters. It is recommended to set at least 1.5 times the radius of the aircraft (including the propeller), but not more than 4 times the `resolution`. If the wheelbase of the aircraft is larger, please increase the `resolution` 
-* `src/realflight_modules/px4ctrl/config/ctrl_param_fpv.yaml`：
-  * `mass`：Actual weight of the drone
-  * `hover_percent`：The hovering throttle of the drone. It can be viewed through px4log. For details, please refer to [document](https://www.bookstack.cn/read/px4-user-guide/zh-log-flight_review.md) If your drone is exactly the same as the course, keep this at 0.3. If the power configuration, or the weight, or the wheelbase is changed, please adjust this item. Otherwise the automatic takeoff will fail to take off or the overshoot will be serious.
-  * `gain/Kp,Kv`：PID's P and I. Generally, no major changes are required. If overshoot occurs, please adjust it appropriately. If the drone is slow to respond, please adjust it appropriately
-  * `rc_reverse`：No changes required if using AT9S。If it is found that the flight direction of the aircraft is opposite to the direction of the joystick, it is necessary to modify this item. Change the value corresponding to the opposite channel to `true`. If the throttle is reversed, the experiment will be very dangerous. It is recommended to confirm it before taking off：
-    * `roslaunch mavros px4.launch`
-    * `rostopic echo /mavros/rc/in`
-    * Turn on the remote control and turn the remote control throttle from the lowest to the highest
-    * See which item in the echo message is changing slowly (this item is the throttle channel value) and observe whether it changes from small to large
-    * If it changes from small to large, there is no need to modify the rc_reverse of the throttle, otherwise change to `true`
-    * The same for other channels
-  
-## Chapter 10: setting of VINS 
-* Check the connection is normal
-  * `ls /dev/tty*`，confirm that the serial port connection of the flight controller is normal. Generally is `/dev/ttyACM0`
-  * `sudo chmod 777 /dev/ttyACM0`，give serial port permissions
-  * `roslaunch mavros px4.launch`
-  * `rostopic hz /mavros/imu/data_raw`，confirm that the imu frequency transmitted by the flight control is around 200hz
-* Check that the realsense driver is normal
-  * `roslaunch realsense2_camera rs_camera.launch`
-  * Enter remote desktop, `rqt_image_view`
-  * Check `/camera/infra1/image_rect_raw`,`/camera/infra2/image_rect_raw`,`/camera/depth/image_rect_raw` is normal
-* VINS parameter settings
-  * Check `realflight_modules/VINS_Fusion/config/`
-  
-  * Drive realsense，`rostopic echo /camera/infra1/camera_info`，fill in `left.yaml` and `right.yaml` with fx, fy, cx, cy in the K matrix
-  
-  * Create a `vins_output` folder in the home directory
-  
-  * Modify in `fast-drone-250.yaml`, for `body_T_cam0` and `body_T_cam1`, `data` 's fourth column to the actual extrinsic parameters of the camera on your drone relative to the flight control，in meters. The order is x/y/z, the fourth item is 1, no need to change
-  
-* Accurate self-calibration of VINS external parameters  
-  * `sh shfiles/rspx4.sh`
-  * `rostopic echo /vins_fusion/imu_propagate`
-  * Pick up the robot and walk <font color="#dd0000">slowly</font>in the field. The lighting in the venue should not change too much.<font color="#dd0000">Do not use light sources that flicker</font>. Put as many clutter as possible to increase the feature points that VINS uses for matching
-  * Replace the content in `vins_output/extrinsic_parameter.txt` to `body_T_cam0` and `body_T_cam1` of `fast-drone-250.yaml`
-  * Repeat the above operation until the odometer data deviation of VINS converges to a satisfactory value after a few laps (usually within 0.3 meters)
-* Test of mapping
-  * `sh shfiles/rspx4.sh`
-  * `roslaunch ego_planner single_run_in_exp.launch`
-  * Enter remote desktop, `roslaunch ego_planner rviz.launch`
+```bash
+./run_container.sh
+```
 
-## Chapter 11: Experiments of Ego-Planner
-* Automatic takeoff
-  * `sh shfiles/rspx4.sh`
-  * `rostopic echo /vins_fusion/imu_propagate`
-  * Pick up the robot and remove it slowly in a small range. After putting it back in place, make sure VINS in a small deviation.
-  * Channel 5 of the RC is dialed to the inside. Channel 6 is dialed to the lower side. The throttle is set to center.
-  * `roslaunch px4ctrl run_ctrl.launch`
-  * `sh shfiles/takeoff.sh`, If the propeller of the aircraft starts to rotate, but cannot take off, the `hover_percent` is too small. If the aircraft flies over 1 meter before descending, the `hover_percent` parameter is too big.
-  * You can control the position of the drone, just like controlling the DJI
-  * When landing, hit the throttle to the lowest level. After the drone is on the ground, set the channel 5 to the middle, and hit the left stick to the lower left corner to lock it.
-  
-* Experiment
-  * Automatic takeoff
-  * `roslaunch ego-planner single_run_in_exp.launch`
-  * `sh shfiles/record.sh`
-  * Enter remote desktop, `roslaunch ego_planner rviz.launch`
-  * Press the G key and the left mouse button to click the target point to make the drone fly
-  
-* <font color="#dd0000">What to do if you encounter an accident during the experiment! ! !</font>
-  * `case 1`: There is no problem with VINS positioning, but the untimely planning/inaccurate mapping causes the drone to plan a trajectory that may crash into an obstacle. If the pilot finds that the drone may hit an obstacle during the flight, turn the channel 6 back to the upper side before the collision. The drone will exit the trajectory following mode and enter the VINS hovering mode. Then land the drone safely
-  * `case 2`: VINS positioning inaccurately，It is manifested as a large tremor of the aircraft/obviously not following the normal trajectory or fast ascent or rapid descent, etc. At this time, it is useless to dial channel 6. You must turn channel 5 back to the middle position. Make the robot completely exit the program control and return to the stabilized mode of the RC. Then land
-  * `case 3`: The drone has hit an obstacle and hasn't fallen to the ground yet. At this time, dial channel 6 to see if the plane can stabilize. If not, dial channel 5 to land manually
-  * `case 4`: The drone hit an obstacle and exploded to the ground. Dial channel 5 to lock it immediately to reduce property damage
-  * `case 5`: **last resort** If you can't figure out what kind of case, or the plane is flying towards a very dangerous area, dial channel 7 to stop the propellers directly. In this way, the aircraft will directly lose power and fall down, which will cause great damage to the fuselage of the aircraft. Generally, it is not recommended under slow speed conditions.
+The script will:
+- Detect network interfaces (`eth0` / `wlan0`) and show the Pi's IP address
+- Ask whether to connect via **Direct IP** or **Tailscale VPN**
+- Start the container and launch `roscore` (ROS Master) via `shfiles/server.sh`
 
+> Note the IP address printed — you will need it for the ground station step.
 
+---
 
+## Setup — Ground Station (Linux PC)
+
+**1. Pull the pre-built image**
+
+```bash
+docker pull ghcr.io/aaranp/autonomous-drone-upgrade/fastdrone_groundstation:latest
+```
+
+> Alternatively, build locally (~10 min):
+> ```bash
+> ./build_groundstation_image.sh
+> ```
+
+**2. Start the ground station container**
+
+```bash
+./run_linux_groundstation.sh
+```
+
+The script will:
+- Enable X11 forwarding so GUI apps (Rviz) render on your desktop
+- Ask whether to connect via **Direct IP** or **Tailscale VPN**
+- Prompt for the Pi's ROS Master IP (noted above)
+- Launch the container and connect to the Pi's ROS Master via `shfiles/client_linux.sh`
+
+---
+
+## Launching the System
+
+### Step 1 — Drone side
+
+Open a new terminal, attach to the running drone container, and start all sensors:
+
+```bash
+./attach_server.sh
+# inside the container:
+/root/shfiles/rspx4.sh
+```
+
+This starts in order:
+1. **RealSense D435i** — `realsense2_camera` (RGB, depth, point cloud at 30 Hz)
+2. **WHEELTEC N100 IMU** — `wheeltec_n100_ros` (200 Hz)
+3. **MAVROS** — ROS ↔ MAVLink bridge to Kakute H7 Mini over UART
+4. **PX4 controller** — `px4ctrl` (receives trajectory setpoints, sends motor commands at 1 kHz)
+
+> **IMU initialisation:** Place the drone flat and stationary for ~60 seconds after launch to allow the N100 bias calibration to complete before arming.
+
+### Step 2 — Ground station side
+
+Open a new terminal, attach to the ground station container, and start odometry + planning:
+
+```bash
+./attach_groundstation.sh
+# inside the container:
+/root/shfiles/launch_client.sh
+```
+
+This starts in order:
+1. RealSense image topic decompression
+2. **VINS-Fusion** — visual-inertial odometry (outputs `/vins_fusion/odometry` at 30 Hz, `/vins_fusion/imu_propagate` at 200 Hz)
+3. Depth topic decompression
+4. **FUEL exploration manager** (`exploration.launch`) — 3D frontier planning, ~10 Hz
+5. **Rviz** — live 3D map and trajectory visualisation
+
+---
+
+## Networking Options
+
+| Mode | How to use |
+|------|-----------|
+| **Direct IP** | Both devices on the same LAN. Enter the Pi's IP when prompted. |
+| **Tailscale VPN** | Install Tailscale on both devices. The Pi should have hostname `ledrone` — it is resolved automatically. |
+
+---
+
+## Parameter Modification
+
+### VINS-Fusion (odometry tuning)
+
+File: [`src/realflight_modules/VINS-Fusion/config/fast_drone_250.yaml`](src/realflight_modules/VINS-Fusion/config/fast_drone_250.yaml)
+
+| Parameter | Description |
+|-----------|-------------|
+| `imu_topic` / `image0_topic` / `image1_topic` | Sensor topic names |
+| `body_T_cam0` / `body_T_cam1` | Camera-to-IMU extrinsic transforms (4×4 matrix) |
+| `max_cnt` | Maximum tracked features (default 220) |
+| `acc_n`, `gyr_n`, `acc_w`, `gyr_w` | IMU noise parameters for N100 |
+| `estimate_td` | Enable camera-IMU time offset estimation |
+
+### Exploration Planner (FUEL)
+
+File: [`src/fuel_planner/exploration_manager/launch/exploration.launch`](src/fuel_planner/exploration_manager/launch/exploration.launch)
+
+| Parameter | Description |
+|-----------|-------------|
+| `map_size_x/y/z` | Map dimensions in metres (default 10×10×3 m) |
+| `box_min/max_x/y/z` | Exploration bounding box |
+| `max_vel`, `max_acc` | Velocity (default 0.4 m/s) and acceleration limits |
+| `fx`, `fy`, `cx`, `cy` | RealSense D435i depth camera intrinsics |
+
+---
+
+## Building Images from Source
+
+### Drone image (ARM64, for Raspberry Pi 5)
+
+```bash
+# Requires Docker buildx with ARM64 emulation
+docker run --privileged --rm tonistiigi/binfmt --install all
+docker buildx build --platform linux/arm64 -t fastdrone_image_pi:latest-arm64 .
+```
+
+> Expected build time: 1–2 hours. The Dockerfile builds ROS Noetic from source (no official ARM64 binary exists), installs librealsense 2.50.0, and compiles the full catkin workspace.
+
+### Ground station image (x86)
+
+```bash
+./build_groundstation_image.sh
+```
+
+---
+
+## Reference Files
+
+| Folder / File | Contents |
+|---------------|----------|
+| [`pictures/`](pictures/) | Drone photos and wiring diagram |
+| [`CAD/`](CAD/) | SolidWorks part files — `Pi_holder.SLDPRT`, `Prop_guard.SLDPRT` |
+| [`purchase_list.xlsx`](purchase_list.xlsx) | Bill of materials |
+| [`readme_en.pdf`](readme_en.pdf) | Original Fast-Drone assembly and tuning guide (upstream reference) |
